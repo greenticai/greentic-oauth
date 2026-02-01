@@ -34,7 +34,7 @@ admin-all = [
 [dependencies]
 greentic-oauth-core = { workspace = true }
 aes-gcm = { workspace = true }
-base64 = "0.22"
+base64 =  { workspace = true }
 ed25519-dalek = { workspace = true }
 hmac = { workspace = true }
 greentic-config = { workspace = true }
@@ -58,7 +58,7 @@ tracing-subscriber = { workspace = true }
 tokio-rustls = { workspace = true }
 rustls = { workspace = true }
 webpki-roots = { workspace = true }
-reqwest = { workspace = true, features = ["rustls-tls"] }
+reqwest = { workspace = true}
 greentic-telemetry.workspace = true
 greentic-types = { workspace = true, default-features = false, features = ["std", "schemars", "schema", "time", "serde", "otel-keys", "telemetry-autoinit"] }
 opentelemetry = { workspace = true }
@@ -71,7 +71,7 @@ ulid = { workspace = true }
 clap = { workspace = true }
 time = { workspace = true }
 subtle = { workspace = true }
-toml = "0.9"
+toml =  { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
@@ -81,7 +81,7 @@ hyper = { workspace = true }
 http-body-util = { workspace = true }
 insta = { workspace = true }
 wiremock = { workspace = true }
-serial_test = "3"
+serial_test =  { workspace = true }
 
 [[bin]]
 name = "greentic-oauth-admin"

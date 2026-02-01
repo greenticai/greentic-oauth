@@ -6,7 +6,7 @@ description = "Lightweight HTTP client for initiating OAuth flows against the Gr
 license = "MIT"
 
 [dependencies]
-reqwest = { workspace = true, features = ["json", "rustls-tls"] }
+reqwest = { workspace = true, features = ["json", "rustls"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

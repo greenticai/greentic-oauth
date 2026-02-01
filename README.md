@@ -45,13 +45,13 @@ assert_eq!(claims.tenant_id, tenant_ctx.tenant.as_str());
 
 ## Toolchain
 
-This workspace targets the Rust 2024 edition. Until the edition stabilises, you need the nightly toolchain:
+This workspace targets the Rust 2024 edition, so it requires `rustc` 1.90.0:
 
 ```bash
-rustup toolchain install nightly
+rustup toolchain install 1.90.0
 ```
 
-The included `rust-toolchain.toml` pins CI and local commands to nightly (with `rustfmt` and `clippy` components), so `cargo …` will automatically use the correct compiler once it is installed.
+The included `rust-toolchain.toml` pins CI and local commands to 1.90.0 (along with `rustfmt` and `clippy`), so `cargo …` will automatically use the correct compiler once it is installed.
 
 To mirror CI locally, run:
 

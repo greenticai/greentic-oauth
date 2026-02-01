@@ -32,6 +32,8 @@
 use std::sync::Arc;
 
 use anyhow::{Error as AnyhowError, anyhow};
+use oidc_reqwest::{Client as HttpClient, redirect::Policy as RedirectPolicy};
+use openidconnect::reqwest as oidc_reqwest;
 use openidconnect::{
     AccessToken, AdditionalProviderMetadata, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
     EndpointMaybeSet, EndpointNotSet, EndpointSet, IssuerUrl, LogoutProviderMetadata, Nonce,
@@ -44,7 +46,6 @@ use openidconnect::{
         CoreResponseType, CoreRevocableToken, CoreSubjectIdentifierType, CoreTokenResponse,
     },
 };
-use reqwest::{Client as HttpClient, redirect::Policy as RedirectPolicy};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use time::OffsetDateTime;
@@ -127,7 +128,7 @@ fn is_loopback_host(host: Host<&str>) -> bool {
     }
 }
 
-fn default_http_client() -> Result<HttpClient, reqwest::Error> {
+fn default_http_client() -> Result<HttpClient, oidc_reqwest::Error> {
     HttpClient::builder()
         .redirect(RedirectPolicy::none())
         .build()
@@ -164,7 +165,7 @@ fn revocation_url_from_metadata(metadata: &GreenticProviderMetadata) -> Option<R
 pub enum OidcError {
     /// Generic HTTP failure.
     #[error("http error: {0}")]
-    Http(#[from] reqwest::Error),
+    Http(#[from] oidc_reqwest::Error),
     /// The OAuth client configuration was invalid.
     #[error("client configuration error: {0}")]
     Configuration(#[from] openidconnect::ConfigurationError),

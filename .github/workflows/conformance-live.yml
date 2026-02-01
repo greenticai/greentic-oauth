@@ -23,6 +23,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          channel: 1.90.0
           components: clippy
 
       - name: Cache cargo

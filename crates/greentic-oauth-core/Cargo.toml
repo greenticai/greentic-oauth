@@ -17,7 +17,7 @@ jar = []
 mtls = []
 
 [dependencies]
-base64 = "0.22"
+base64 =  { workspace = true }
 rand = { workspace = true }
 sha2 = { workspace = true }
 jsonwebtoken = { workspace = true }
@@ -37,7 +37,7 @@ chrono = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 openidconnect = { workspace = true }
-reqwest = { workspace = true, features = ["json", "rustls-tls", "blocking"] }
+reqwest = { workspace = true, features = ["json", "blocking"] }
 greentic-config-types = { workspace = true }
 
 [dev-dependencies]
