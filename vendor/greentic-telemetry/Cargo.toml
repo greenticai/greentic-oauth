@@ -36,7 +36,7 @@ categories = [
     "wasm",
 ]
 license = "MIT"
-repository = "https://github.com/greentic-ai/greentic-telemetry"
+repository = "https://github.com/greenticai/greentic-telemetry"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -150,3 +150,4 @@ default-features = false
 [dev-dependencies.insta]
 version = "1.43.2"
 features = ["json"]
+

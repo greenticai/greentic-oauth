@@ -4,7 +4,7 @@ version.workspace = true
 edition = "2024"
 description = "Client SDK and WIT host bindings for interacting with the Greentic OAuth broker."
 license = "MIT"
-repository = "https://github.com/greentic-ai/greentic-oauth"
+repository = "https://github.com/greenticai/greentic-oauth"
 homepage = "https://greentic.ai"
 documentation = "https://docs.rs/greentic-oauth-sdk"
 
@@ -36,3 +36,4 @@ greentic-types = { workspace = true, default-features = false, features = ["std"
 [dev-dependencies]
 uuid = { workspace = true }
 anyhow = { workspace = true }
+
