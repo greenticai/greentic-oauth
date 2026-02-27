@@ -29,7 +29,7 @@ fi
 REQUIRED_COMPONENTS=(rustfmt clippy)
 REQUIRED_TARGETS=(wasm32-wasip2 x86_64-unknown-linux-gnu)
 SCHEMA_LOCAL_PATH="${SCHEMA_LOCAL_PATH:-static/schemas/provider-descriptor.schema.json}"
-SCHEMA_REMOTE_URL="${SCHEMA_REMOTE_URL:-https://raw.githubusercontent.com/greentic-ai/greentic-oauth/refs/heads/master/static/schemas/provider-descriptor.schema.json}"
+SCHEMA_REMOTE_URL="${SCHEMA_REMOTE_URL:-https://raw.githubusercontent.com/greenticai/greentic-oauth/refs/heads/master/static/schemas/provider-descriptor.schema.json}"
 
 SKIP_EXIT=99
 SKIPPED_STEPS=()
@@ -383,3 +383,4 @@ main() {
 }
 
 main "$@"
+

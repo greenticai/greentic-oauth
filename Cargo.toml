@@ -14,9 +14,9 @@ resolver = "2"
 [workspace.package]
 version = "0.4.22"
 edition = "2024"
-repository = "https://github.com/greentic-ai/greentic-oauth"
-homepage = "https://github.com/greentic-ai/greentic-oauth"
-documentation = "https://github.com/greentic-ai/greentic-oauth/blob/main/README.md"
+repository = "https://github.com/greenticai/greentic-oauth"
+homepage = "https://github.com/greenticai/greentic-oauth"
+documentation = "https://github.com/greenticai/greentic-oauth/blob/main/README.md"
 
 [workspace.dependencies]
 greentic-oauth-core = { path = "crates/greentic-oauth-core", version = "0.4" }
@@ -81,3 +81,4 @@ http = "1"
 chrono = { version = "0.4", features = ["serde"] }
 toml = "0.9"
 serial_test = "3"
+

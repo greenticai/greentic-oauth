@@ -4,7 +4,7 @@ version.workspace = true
 edition = "2024"
 description = "Shared OAuth types, token helpers, and provider primitives used by the Greentic broker and SDKs."
 license = "MIT"
-repository = "https://github.com/greentic-ai/greentic-oauth"
+repository = "https://github.com/greenticai/greentic-oauth"
 homepage = "https://greentic.ai"
 documentation = "https://docs.rs/greentic-oauth-core"
 
@@ -45,3 +45,4 @@ serde_json = { workspace = true }
 uuid = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread", "net", "time"] }
 wiremock = { workspace = true }
+
