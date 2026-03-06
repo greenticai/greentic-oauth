@@ -25,17 +25,23 @@ use url::Url;
 
 #[tokio::main]
 async fn main() {
+    eprintln!("greentic-oauth-broker: booting");
     if let Err(error) = bootstrap().await {
+        eprintln!("greentic-oauth-broker: fatal error: {error:#}");
         tracing::error!("broker shut down with error: {error}");
         process::exit(1);
     }
 }
 
 async fn bootstrap() -> Result<()> {
-    init_telemetry_auto(TelemetryConfig {
+    if let Err(err) = init_telemetry_auto(TelemetryConfig {
         service_name: "greentic-oauth".to_string(),
     })
-    .context("failed to initialize telemetry")?;
+    .context("failed to initialize telemetry")
+    {
+        eprintln!("greentic-oauth-broker: telemetry init failed: {err:#}");
+        return Err(err);
+    }
     tracing::info!(component = "broker", "oauth broker starting up");
     run().await
 }
@@ -70,16 +76,30 @@ async fn run() -> Result<()> {
     let secrets_dir =
         legacy_secrets_dir.unwrap_or_else(|| resolved.config.paths.state_dir.join("secrets"));
     let secrets = Arc::new(EnvSecretsManager::new(secrets_dir)?);
-    let providers = Arc::new(ProviderRegistry::from_store(&*secrets)?);
-    let security = Arc::new(SecurityConfig::from_store(&*secrets)?);
+    let providers = Arc::new(
+        ProviderRegistry::from_store(&*secrets)
+            .context("failed to initialize provider registry from secrets store")?,
+    );
+    let security = Arc::new(
+        SecurityConfig::from_store(&*secrets)
+            .context("failed to initialize security config from secrets store")?,
+    );
     let index = Arc::new(StorageIndex::new());
-    let redirect_guard = Arc::new(RedirectGuard::from_env()?);
+    let redirect_guard =
+        Arc::new(RedirectGuard::from_env().context("failed to parse OAUTH_REDIRECT_WHITELIST")?);
     let config_root = Arc::new(
         std::env::var("PROVIDER_CONFIG_ROOT")
             .map(PathBuf::from)
             .unwrap_or_else(|_| resolved.config.paths.greentic_root.join("configs")),
     );
-    let provider_catalog = Arc::new(ProviderCatalog::load(&config_root.join("providers"))?);
+    let provider_catalog = Arc::new(
+        ProviderCatalog::load(&config_root.join("providers")).with_context(|| {
+            format!(
+                "failed to load provider catalog from {}",
+                config_root.join("providers").display()
+            )
+        })?,
+    );
     let session_ttl_secs = std::env::var("OAUTH_SESSION_TTL_SECS")
         .ok()
         .and_then(|value| value.parse::<u64>().ok())
@@ -199,7 +219,9 @@ async fn run() -> Result<()> {
         .and_then(|p| p.parse::<u16>().ok())
         .unwrap_or(8080);
     let addr: SocketAddr = format!("{host}:{port}").parse()?;
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .with_context(|| format!("failed to bind HTTP listener on {addr}"))?;
     tracing::info!(?addr, "http server listening");
 
     let make_service = router.into_make_service_with_connect_info::<SocketAddr>();
