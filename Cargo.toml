@@ -81,3 +81,9 @@ http = "1"
 chrono = { version = "0.4", features = ["serde"] }
 toml = "0.9"
 serial_test = "3"
+
+[patch.crates-io]
+greentic-interfaces = { path = "vendor/patches/greentic-interfaces" }
+greentic-interfaces-guest = { path = "vendor/patches/greentic-interfaces-guest" }
+greentic-interfaces-host = { path = "vendor/patches/greentic-interfaces-host" }
+greentic-interfaces-wasmtime = { path = "vendor/patches/greentic-interfaces-wasmtime" }
