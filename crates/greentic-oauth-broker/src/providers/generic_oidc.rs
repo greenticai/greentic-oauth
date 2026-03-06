@@ -107,6 +107,7 @@ impl GenericOidcProvider {
         let mut response = self
             .agent
             .post(&self.token_url)
+            .header("accept", "application/json")
             .send_form(params.iter().map(|(k, v)| (k.as_str(), v.as_str())))
             .map_err(|err| ProviderError::new(ProviderErrorKind::Transport, err.to_string()))?;
 
@@ -126,9 +127,11 @@ impl GenericOidcProvider {
             ));
         }
 
-        let payload: TokenEndpointResponse = response.body_mut().read_json().map_err(|err| {
-            ProviderError::new(ProviderErrorKind::InvalidResponse, err.to_string())
-        })?;
+        let body = response
+            .body_mut()
+            .read_to_string()
+            .map_err(|err| ProviderError::new(ProviderErrorKind::InvalidResponse, err.to_string()))?;
+        let payload = parse_token_payload(&body)?;
 
         Ok(payload.into())
     }
@@ -250,6 +253,47 @@ impl From<TokenEndpointResponse> for TokenSet {
             id_token: value.id_token,
         }
     }
+}
+
+fn parse_token_payload(body: &str) -> ProviderResult<TokenEndpointResponse> {
+    if let Ok(payload) = serde_json::from_str::<TokenEndpointResponse>(body) {
+        return Ok(payload);
+    }
+
+    let mut access_token = None;
+    let mut expires_in = None;
+    let mut refresh_token = None;
+    let mut token_type = None;
+    let mut scope = None;
+    let mut id_token = None;
+
+    for (key, value) in url::form_urlencoded::parse(body.as_bytes()) {
+        match key.as_ref() {
+            "access_token" => access_token = Some(value.into_owned()),
+            "expires_in" => expires_in = value.parse::<u64>().ok(),
+            "refresh_token" => refresh_token = Some(value.into_owned()),
+            "token_type" => token_type = Some(value.into_owned()),
+            "scope" => scope = Some(value.into_owned()),
+            "id_token" => id_token = Some(value.into_owned()),
+            _ => {}
+        }
+    }
+
+    let Some(access_token) = access_token else {
+        return Err(ProviderError::new(
+            ProviderErrorKind::InvalidResponse,
+            "invalid response: expected JSON or form-encoded token payload".to_string(),
+        ));
+    };
+
+    Ok(TokenEndpointResponse {
+        access_token,
+        expires_in,
+        refresh_token,
+        token_type,
+        scope,
+        id_token,
+    })
 }
 
 #[cfg(test)]
