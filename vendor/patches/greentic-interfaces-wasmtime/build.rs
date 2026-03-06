@@ -196,8 +196,12 @@ fn resolve_canonical_wit_root(manifest_dir: &Utf8PathBuf) -> Utf8PathBuf {
     }
 
     let mut candidates = vec![
-        manifest_dir.join("../greentic-interfaces/wit").into_std_path_buf(),
-        manifest_dir.join("../../greentic-interfaces/wit").into_std_path_buf(),
+        manifest_dir
+            .join("../greentic-interfaces/wit")
+            .into_std_path_buf(),
+        manifest_dir
+            .join("../../greentic-interfaces/wit")
+            .into_std_path_buf(),
         manifest_dir.join("wit").into_std_path_buf(),
         manifest_dir.join("../wit").into_std_path_buf(),
     ];
