@@ -206,16 +206,16 @@ fn resolve_canonical_wit_root(manifest_dir: &Utf8PathBuf) -> Utf8PathBuf {
         manifest_dir.join("../wit").into_std_path_buf(),
     ];
 
-    if let Some(parent) = manifest_dir.parent() {
-        if let Ok(entries) = fs::read_dir(parent) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-                    continue;
-                };
-                if name.starts_with("greentic-interfaces") {
-                    candidates.push(path.join("wit"));
-                }
+    if let Some(parent) = manifest_dir.parent()
+        && let Ok(entries) = fs::read_dir(parent)
+    {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                continue;
+            };
+            if name.starts_with("greentic-interfaces") {
+                candidates.push(path.join("wit"));
             }
         }
     }
