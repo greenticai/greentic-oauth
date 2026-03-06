@@ -79,7 +79,7 @@ dotenvy = "0.15"
 dashmap = "6"
 http = "1"
 chrono = { version = "0.4", features = ["serde"] }
-toml = "0.9"
+toml = "1.0"
 serial_test = "3"
 
 [patch.crates-io]
