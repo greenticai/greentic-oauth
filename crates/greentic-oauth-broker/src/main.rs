@@ -85,9 +85,8 @@ async fn run() -> Result<()> {
             .context("failed to initialize security config from secrets store")?,
     );
     let index = Arc::new(StorageIndex::new());
-    let redirect_guard = Arc::new(
-        RedirectGuard::from_env().context("failed to parse OAUTH_REDIRECT_WHITELIST")?,
-    );
+    let redirect_guard =
+        Arc::new(RedirectGuard::from_env().context("failed to parse OAUTH_REDIRECT_WHITELIST")?);
     let config_root = Arc::new(
         std::env::var("PROVIDER_CONFIG_ROOT")
             .map(PathBuf::from)

@@ -127,10 +127,9 @@ impl GenericOidcProvider {
             ));
         }
 
-        let body = response
-            .body_mut()
-            .read_to_string()
-            .map_err(|err| ProviderError::new(ProviderErrorKind::InvalidResponse, err.to_string()))?;
+        let body = response.body_mut().read_to_string().map_err(|err| {
+            ProviderError::new(ProviderErrorKind::InvalidResponse, err.to_string())
+        })?;
         let payload = parse_token_payload(&body)?;
 
         Ok(payload.into())
