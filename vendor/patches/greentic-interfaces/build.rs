@@ -278,7 +278,7 @@ fn generate_rust_bindings(staged_root: &Path, out_dir: &Path) -> Result<PathBuf,
             let module_name = module_name(&package_name, &world_name);
             let mut files = Files::default();
             let mut generator = opts.clone().build();
-            generator.generate(&mut resolve, world_id, &mut files)?;
+            generator.generate(&resolve, world_id, &mut files)?;
 
             let mut combined = Vec::new();
             for (_, contents) in files.iter() {
