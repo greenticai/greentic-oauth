@@ -64,6 +64,7 @@ version = "1"
 [dependencies.greentic-interfaces]
 version = "0.4"
 default-features = false
+path = "../greentic-interfaces"
 
 [dependencies.wasmtime]
 version = "42"
@@ -87,6 +88,7 @@ version = "1"
 [build-dependencies.greentic-interfaces]
 version = "0.4"
 default-features = false
+path = "../greentic-interfaces"
 
 [build-dependencies.proc-macro2]
 version = "1"

@@ -2,6 +2,7 @@ use camino::Utf8PathBuf;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 use std::{env, fs};
 use walkdir::WalkDir;
 
@@ -47,11 +48,10 @@ fn main() {
     let out_dir = Utf8PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set"));
     let manifest_dir =
         Utf8PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
-    let canonical_root = Utf8PathBuf::from_path_buf(greentic_interfaces::wit_root())
-        .expect("canonical WIT root must be valid UTF-8");
+    let canonical_root = resolve_canonical_wit_root(&manifest_dir);
     assert!(
         canonical_root.is_dir(),
-        "canonical WIT root not found at {} (expected from greentic_interfaces::wit_root())",
+        "canonical WIT root not found at {}",
         canonical_root
     );
     let wit_root = canonical_root.join("greentic");
@@ -185,6 +185,64 @@ fn main() {
     fs::create_dir_all(&out_dir).expect("create OUT_DIR");
     let gen_path = out_dir.join("gen_all_worlds.rs");
     fs::write(&gen_path, src.to_string()).expect("write generated bindings");
+}
+
+fn resolve_canonical_wit_root(manifest_dir: &Utf8PathBuf) -> Utf8PathBuf {
+    if let Some(from_env) = env::var_os("GREENTIC_INTERFACES_WIT_ROOT") {
+        let path = PathBuf::from(from_env);
+        if has_wit_files(&path) {
+            return Utf8PathBuf::from_path_buf(path).expect("WIT root must be valid UTF-8");
+        }
+    }
+
+    let mut candidates = vec![
+        manifest_dir.join("../greentic-interfaces/wit").into_std_path_buf(),
+        manifest_dir.join("../../greentic-interfaces/wit").into_std_path_buf(),
+        manifest_dir.join("wit").into_std_path_buf(),
+        manifest_dir.join("../wit").into_std_path_buf(),
+    ];
+
+    if let Some(parent) = manifest_dir.parent() {
+        if let Ok(entries) = fs::read_dir(parent) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                    continue;
+                };
+                if name.starts_with("greentic-interfaces") {
+                    candidates.push(path.join("wit"));
+                }
+            }
+        }
+    }
+
+    for candidate in candidates {
+        if has_wit_files(&candidate) {
+            return Utf8PathBuf::from_path_buf(candidate).expect("WIT root must be valid UTF-8");
+        }
+    }
+
+    panic!(
+        "Failed to locate canonical WIT root. Set GREENTIC_INTERFACES_WIT_ROOT or vendor greentic-interfaces with wit/."
+    );
+}
+
+fn has_wit_files(root: &Path) -> bool {
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = fs::read_dir(dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().and_then(|s| s.to_str()) == Some("wit") {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 fn reset_directory(path: &Utf8PathBuf) {

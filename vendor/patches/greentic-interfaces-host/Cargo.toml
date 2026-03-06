@@ -74,6 +74,7 @@ path = "tests/worker_v1_compiles.rs"
 version = "0.4"
 features = ["wit-all"]
 default-features = false
+path = "../greentic-interfaces"
 
 [dependencies.greentic-types]
 version = "0.4"
