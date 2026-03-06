@@ -19,7 +19,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@nightly
         with:
-          channel: 1.90.0
+          channel: 1.91.0
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
 

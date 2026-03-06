@@ -23,7 +23,7 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
-          channel: 1.90.0
+          channel: 1.91.0
           components: rustfmt, clippy
 
       - name: Cache cargo directories
