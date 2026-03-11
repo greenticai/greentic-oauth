@@ -42,6 +42,7 @@ packs_by_name = {entry["name"]: entry for entry in lock.get("packs", [])}
 
 for pack_path in sorted((root / "dist" / "packs").glob("*.gtpack")):
     name = pack_path.stem
+    rel_pack_path = pack_path.relative_to(root)
     repo_path = f"{registry}/{namespace}/{repo}/{name}"
     version_ref = f"{repo_path}:{pack_version}"
     subprocess.run(
@@ -49,7 +50,7 @@ for pack_path in sorted((root / "dist" / "packs").glob("*.gtpack")):
             "oras",
             "push",
             version_ref,
-            f"{pack_path}:application/vnd.greentic.gtpack.v1+zip",
+            f"{rel_pack_path}:application/vnd.greentic.gtpack.v1+zip",
         ],
         check=True,
     )
@@ -60,7 +61,7 @@ for pack_path in sorted((root / "dist" / "packs").glob("*.gtpack")):
                 "oras",
                 "push",
                 latest_ref,
-                f"{pack_path}:application/vnd.greentic.gtpack.v1+zip",
+                f"{rel_pack_path}:application/vnd.greentic.gtpack.v1+zip",
             ],
             check=True,
         )
