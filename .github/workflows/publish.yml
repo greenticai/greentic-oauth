@@ -201,7 +201,7 @@ jobs:
           path: dist/packs
 
       - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+        run: echo "${{ secrets.TO_DELETE_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Publish packs
         env:
