@@ -8,6 +8,11 @@ on:
 
 permissions:
   contents: read
+  packages: write
+
+env:
+  OCI_REGISTRY: ghcr.io
+  OCI_REPO: packs/oauth
 
 jobs:
   build-test:
@@ -27,7 +32,130 @@ jobs:
           cargo test --workspace --all-features -- --nocapture
           cargo build -p greentic-oauth-broker --release
 
-  publish:
+  sync-packs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify provider descriptors exist
+        run: |
+          test -f configs/providers/github.yaml
+          test -f configs/providers/google.yaml
+          test -f configs/providers/slack.yaml
+          test -f configs/providers/microsoft-graph.yaml
+          test -f configs/providers/oidc-generic.yaml
+
+  flow-doctor:
+    runs-on: ubuntu-latest
+    needs: sync-packs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Flow doctor placeholder
+        run: echo "greentic-oauth has provider-descriptor packs only; no flow validation stage yet."
+
+  component-doctor:
+    runs-on: ubuntu-latest
+    needs: sync-packs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Component doctor placeholder
+        run: echo "greentic-oauth has no pack component build matrix yet."
+
+  questions-component-test:
+    runs-on: ubuntu-latest
+    needs: sync-packs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Questions component placeholder
+        run: echo "greentic-oauth has no questions component pack tests yet."
+
+  build-packs:
+    runs-on: ubuntu-latest
+    needs: [sync-packs, flow-doctor, component-doctor, questions-component-test]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          channel: 1.91.0
+
+      - name: Cache cargo bin tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+          key: cargo-bin-tools-${{ runner.os }}-v1
+
+      - name: Install cargo-binstall
+        run: |
+          if ! command -v cargo-binstall >/dev/null 2>&1; then
+            cargo install cargo-binstall --locked
+          fi
+
+      - name: Install greentic-pack
+        env:
+          CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+        run: |
+          cargo binstall greentic-pack --force --no-confirm --locked || cargo install greentic-pack --force --locked
+          echo "${HOME}/.cargo/bin" >> "${GITHUB_PATH}"
+          greentic-pack --version
+
+      - name: Install greentic-flow
+        run: |
+          cargo binstall greentic-flow --force --no-confirm --locked || cargo install greentic-flow --force --locked
+
+      - name: Install greentic-runner
+        run: |
+          cargo binstall greentic-runner --force --no-confirm --locked || cargo install greentic-runner --force --locked
+
+      - name: Install greentic-component
+        run: |
+          cargo binstall greentic-component --force --no-confirm --locked || cargo install greentic-component --force --locked
+
+      - name: Install oras
+        uses: oras-project/setup-oras@v1
+        with:
+          version: 1.2.0
+
+      - name: Download component artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: components-wasm-*
+          path: target/components
+          merge-multiple: true
+
+      - name: Build packs
+        run: ./ci/build_packs.sh
+
+      - name: Upload packs + fixtures report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packs-and-fixtures
+          path: |
+            dist/packs/*.gtpack
+            dist/fixtures_report.json
+          if-no-files-found: error
+
+      - name: Upload built packs
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oauth-gtpack-artifacts
+          path: dist/packs/*.gtpack
+          if-no-files-found: error
+
+      - name: Upload packs lockfile (dry-run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: packs-lockfile-dryrun
+          path: packs.lock.json
+          if-no-files-found: error
+
+  publish-crates:
     if: github.event_name == 'push'
     needs: build-test
     runs-on: ubuntu-latest
@@ -49,3 +177,42 @@ jobs:
           ignore-unpublished-changes: true
           check-repo: true
           dry-run: false
+
+  publish-packs:
+    # Temporary PR publishing for validation. Remove before merge.
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    needs: build-packs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install oras
+        uses: oras-project/setup-oras@v1
+        with:
+          version: 1.2.0
+
+      - name: Download built packs
+        uses: actions/download-artifact@v4
+        with:
+          name: oauth-gtpack-artifacts
+          path: dist/packs
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Publish packs
+        env:
+          OCI_NAMESPACE: ${{ github.repository_owner }}
+          PACK_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          PUBLISH_LATEST: "1"
+        run: ./ci/publish_packs.sh
+
+      - name: Upload published packs lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: packs-lockfile-published
+          path: packs.lock.json
+          if-no-files-found: error
