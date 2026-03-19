@@ -95,3 +95,90 @@ impl TimeoutConfigurable for BlockingClientBuilder {
         self.timeout(timeout)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Debug, Default)]
+    struct TestBuilder {
+        proxy_calls: usize,
+        connect_timeout: Option<Duration>,
+        timeout: Option<Duration>,
+    }
+
+    impl ProxyConfigurable for TestBuilder {
+        fn with_proxy(mut self, _proxy: Proxy) -> Self {
+            self.proxy_calls += 1;
+            self
+        }
+    }
+
+    impl TimeoutConfigurable for TestBuilder {
+        fn with_connect_timeout(mut self, timeout: Duration) -> Self {
+            self.connect_timeout = Some(timeout);
+            self
+        }
+
+        fn with_timeout(mut self, timeout: Duration) -> Self {
+            self.timeout = Some(timeout);
+            self
+        }
+    }
+
+    #[test]
+    fn apply_network_sets_proxy_and_timeouts_when_valid() {
+        let mut options = OAuthClientOptions::default();
+        options.network.proxy_url = Some("http://127.0.0.1:8080".to_string());
+        options.network.connect_timeout_ms = Some(1_500);
+        options.network.read_timeout_ms = Some(2_500);
+
+        let applied = options.apply_network(TestBuilder::default());
+
+        assert_eq!(applied.proxy_calls, 1);
+        assert_eq!(applied.connect_timeout, Some(Duration::from_millis(1_500)));
+        assert_eq!(applied.timeout, Some(Duration::from_millis(2_500)));
+    }
+
+    #[test]
+    fn apply_network_ignores_invalid_proxy_url() {
+        let mut options = OAuthClientOptions::default();
+        options.network.proxy_url = Some("://not-a-valid-proxy".to_string());
+
+        let applied = options.apply_network(TestBuilder::default());
+
+        assert_eq!(applied.proxy_calls, 0);
+    }
+
+    #[test]
+    fn apply_network_keeps_defaults_when_unset() {
+        let options = OAuthClientOptions::default();
+
+        let applied = options.apply_network(TestBuilder::default());
+
+        assert_eq!(applied.proxy_calls, 0);
+        assert_eq!(applied.connect_timeout, None);
+        assert_eq!(applied.timeout, None);
+    }
+
+    #[test]
+    fn apply_network_accepts_zero_timeout_values() {
+        let mut options = OAuthClientOptions::default();
+        options.network.connect_timeout_ms = Some(0);
+        options.network.read_timeout_ms = Some(0);
+
+        let applied = options.apply_network(TestBuilder::default());
+
+        assert_eq!(applied.connect_timeout, Some(Duration::from_millis(0)));
+        assert_eq!(applied.timeout, Some(Duration::from_millis(0)));
+    }
+
+    #[test]
+    fn build_clients_succeeds_when_tls_mode_is_disabled() {
+        let mut options = OAuthClientOptions::default();
+        options.network.tls_mode = TlsMode::Disabled;
+
+        assert!(options.build_http_client().is_ok());
+        assert!(options.build_blocking_http_client().is_ok());
+    }
+}

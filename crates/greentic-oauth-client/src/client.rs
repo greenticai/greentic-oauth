@@ -198,3 +198,131 @@ impl Visibility {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    // These tests validate the client-side request mapping and error parsing used by SDK/app
+    // integrations so broker calls remain stable even when request shapes evolve.
+    fn full_start_request() -> StartRequest {
+        let mut extra_params = BTreeMap::new();
+        extra_params.insert("prompt".to_string(), "consent".to_string());
+
+        StartRequest {
+            env: "dev".to_string(),
+            tenant: "acme".to_string(),
+            provider: "microsoft".to_string(),
+            team: Some("ops".to_string()),
+            owner_kind: OwnerKind::User,
+            owner_id: "alice@example.com".to_string(),
+            flow_id: "flow-123".to_string(),
+            scopes: vec!["openid".to_string(), "profile".to_string()],
+            redirect_uri: Some("https://app.example.com/callback".to_string()),
+            visibility: Some(Visibility::Team),
+            extra_params: Some(extra_params),
+        }
+    }
+
+    #[test]
+    fn builder_requires_base_url() {
+        match Client::builder().build() {
+            Ok(_) => panic!("build should fail without base url"),
+            Err(err) => assert!(matches!(err, ClientError::MissingBaseUrl)),
+        }
+    }
+
+    #[test]
+    fn builder_rejects_invalid_base_url() {
+        match Client::builder().base_url("not a valid url") {
+            Ok(_) => panic!("invalid base url should fail"),
+            Err(err) => match err {
+                ClientError::InvalidBaseUrl(message) => {
+                    assert!(message.contains("not a valid url"));
+                }
+                other => panic!("expected invalid base url error, got {other:?}"),
+            },
+        }
+    }
+
+    #[test]
+    fn api_start_request_serializes_all_fields() {
+        let request = full_start_request();
+        let payload = ApiStartRequest::from(&request);
+        let body = serde_json::to_value(payload).expect("request payload should serialize");
+
+        assert_eq!(body.get("env"), Some(&json!("dev")));
+        assert_eq!(body.get("tenant"), Some(&json!("acme")));
+        assert_eq!(body.get("provider"), Some(&json!("microsoft")));
+        assert_eq!(body.get("team"), Some(&json!("ops")));
+        assert_eq!(body.get("owner_kind"), Some(&json!("user")));
+        assert_eq!(body.get("owner_id"), Some(&json!("alice@example.com")));
+        assert_eq!(body.get("flow_id"), Some(&json!("flow-123")));
+        assert_eq!(body.get("scopes"), Some(&json!(["openid", "profile"])));
+        assert_eq!(
+            body.get("redirect_uri"),
+            Some(&json!("https://app.example.com/callback"))
+        );
+        assert_eq!(body.get("visibility"), Some(&json!("team")));
+        assert_eq!(
+            body.get("extra_params"),
+            Some(&json!({"prompt": "consent"}))
+        );
+    }
+
+    #[test]
+    fn api_start_request_omits_empty_optional_fields() {
+        let request = StartRequest {
+            env: "dev".to_string(),
+            tenant: "acme".to_string(),
+            provider: "microsoft".to_string(),
+            team: None,
+            owner_kind: OwnerKind::Service,
+            owner_id: "svc-1".to_string(),
+            flow_id: "flow-123".to_string(),
+            scopes: Vec::new(),
+            redirect_uri: None,
+            visibility: None,
+            extra_params: None,
+        };
+        let payload = ApiStartRequest::from(&request);
+        let body = serde_json::to_value(payload).expect("request payload should serialize");
+
+        assert!(body.get("team").is_none());
+        assert!(body.get("scopes").is_none());
+        assert!(body.get("redirect_uri").is_none());
+        assert!(body.get("visibility").is_none());
+        assert!(body.get("extra_params").is_none());
+        assert_eq!(body.get("owner_kind"), Some(&json!("service")));
+    }
+
+    #[test]
+    fn extract_error_message_prefers_error_field() {
+        let body = r#"{"error":"invalid_client"}"#;
+        assert_eq!(extract_error_message(body), "invalid_client");
+    }
+
+    #[test]
+    fn extract_error_message_serializes_non_string_error_field() {
+        let body = r#"{"error":{"code":"invalid_client","status":400}}"#;
+        let message = extract_error_message(body);
+        assert!(message.contains("invalid_client"));
+        assert!(message.contains("400"));
+    }
+
+    #[test]
+    fn extract_error_message_falls_back_to_raw_body() {
+        let body = "upstream unavailable";
+        assert_eq!(extract_error_message(body), "upstream unavailable");
+    }
+
+    #[test]
+    fn owner_kind_and_visibility_string_values_are_stable() {
+        assert_eq!(OwnerKind::User.as_str(), "user");
+        assert_eq!(OwnerKind::Service.as_str(), "service");
+        assert_eq!(Visibility::Private.as_str(), "private");
+        assert_eq!(Visibility::Team.as_str(), "team");
+        assert_eq!(Visibility::Tenant.as_str(), "tenant");
+    }
+}
