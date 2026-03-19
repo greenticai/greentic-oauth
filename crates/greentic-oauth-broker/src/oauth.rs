@@ -818,6 +818,8 @@ fn now_secs() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    // These tests validate broker OAuth primitives used by HTTP/NATS adapters:
+    // key normalization, consent URL construction, token retrieval behavior, and host error mapping.
     #[derive(Default)]
     struct StubSecrets {
         map: Mutex<HashMap<String, String>>,
@@ -857,6 +859,40 @@ mod tests {
     impl ConfigManager for StubConfig {
         fn get(&self, key: &str) -> Option<String> {
             self.map.lock().unwrap().get(key).cloned()
+        }
+    }
+
+    struct NoRefreshProvider;
+
+    impl OAuthProvider for NoRefreshProvider {
+        fn provider_id(&self) -> &str {
+            "no-refresh"
+        }
+
+        fn auth_url(&self) -> &str {
+            "https://no-refresh.example/authorize"
+        }
+
+        fn token_url(&self) -> &str {
+            "https://no-refresh.example/token"
+        }
+
+        fn exchange_code(&self, _req: &ExchangeRequest<'_>, _http: &Client) -> Result<TokenSet> {
+            Ok(TokenSet {
+                access_token: "unused".to_string(),
+                refresh_token: Some("refresh-unused".to_string()),
+                expires_at: Some(now_secs().saturating_add(60)),
+                token_type: Some("Bearer".to_string()),
+                extra: Value::Null,
+            })
+        }
+
+        fn refresh_token(
+            &self,
+            _req: &RefreshRequest<'_>,
+            _http: &Client,
+        ) -> Result<Option<TokenSet>> {
+            Ok(None)
         }
     }
 
@@ -902,6 +938,40 @@ mod tests {
     }
 
     #[test]
+    fn build_redirect_url_requires_base_url_configuration() {
+        let secrets = Arc::new(StubSecrets::default());
+        let config = Arc::new(StubConfig::default());
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = OAuthBroker::new(secrets, config, tokens, vec![]);
+        let tenant = TenantCtx::new(
+            EnvId::try_from("dev").expect("env"),
+            TenantId::try_from("acme").expect("tenant"),
+        );
+
+        let err = broker
+            .build_redirect_url(&tenant, "/oauth/callback")
+            .expect_err("missing base url should fail");
+        assert!(err.to_string().contains("missing OAUTH_BASE_URL"));
+    }
+
+    #[test]
+    fn build_redirect_url_rejects_invalid_base_url() {
+        let secrets = Arc::new(StubSecrets::default());
+        let config = Arc::new(StubConfig::default().with("OAUTH_BASE_URL", "not-a-url"));
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = OAuthBroker::new(secrets, config, tokens, vec![]);
+        let tenant = TenantCtx::new(
+            EnvId::try_from("dev").expect("env"),
+            TenantId::try_from("acme").expect("tenant"),
+        );
+
+        let err = broker
+            .build_redirect_url(&tenant, "/oauth/callback")
+            .expect_err("invalid base url should fail");
+        assert!(err.to_string().contains("invalid OAUTH_BASE_URL"));
+    }
+
+    #[test]
     fn consent_url_uses_defaults_and_extra() {
         let secrets = Arc::new(StubSecrets::default().with("OAUTH_DUMMY_CLIENT_ID", "client"));
         let config =
@@ -929,6 +999,24 @@ mod tests {
             pairs.get("redirect_uri"),
             Some(&"https://global.example/cb".to_string())
         );
+    }
+
+    #[test]
+    fn consent_url_rejects_invalid_extra_json() {
+        let secrets = Arc::new(StubSecrets::default().with("OAUTH_DUMMY_CLIENT_ID", "client"));
+        let config =
+            Arc::new(StubConfig::default().with("OAUTH_BASE_URL", "https://global.example"));
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = OAuthBroker::new(secrets, config, tokens, vec![Arc::new(DummyProvider)]);
+        let tenant = TenantCtx::new(
+            EnvId::try_from("dev").expect("env"),
+            TenantId::try_from("tenant-1").expect("tenant"),
+        );
+
+        let err = broker
+            .get_consent_url(&tenant, "dummy", "subj", &[], "/cb", "{not-json")
+            .expect_err("invalid json payload should fail");
+        assert!(err.to_string().contains("invalid extra_json payload"));
     }
 
     #[test]
@@ -966,6 +1054,123 @@ mod tests {
             .expect("get token")
             .expect("token present");
         assert_eq!(token.access_token, "token:refreshed");
+    }
+
+    #[test]
+    fn returns_cached_token_when_access_token_is_not_expired() {
+        let secrets = Arc::new(StubSecrets::default());
+        let config =
+            Arc::new(StubConfig::default().with("OAUTH_BASE_URL", "https://global.example"));
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = OAuthBroker::new(
+            secrets,
+            config,
+            Arc::clone(&tokens),
+            vec![Arc::new(DummyProvider)],
+        );
+        let tenant_ctx = TenantCtx::new(
+            EnvId::try_from("dev").expect("env"),
+            TenantId::try_from("tenant").expect("tenant"),
+        );
+        let valid = TokenSet {
+            access_token: "still-valid".into(),
+            refresh_token: Some("refresh-dummy".into()),
+            expires_at: Some(now_secs().saturating_add(600)),
+            token_type: Some("Bearer".into()),
+            extra: Value::Null,
+        };
+        tokens
+            .save_token(&tenant_ctx, "dummy", "user1", &valid)
+            .unwrap();
+
+        let token = broker
+            .get_token(&tenant_ctx, "dummy", "user1", &[])
+            .expect("get token")
+            .expect("token should be present");
+        assert_eq!(token.access_token, "still-valid");
+        assert_eq!(token.refresh_token.as_deref(), Some("refresh-dummy"));
+    }
+
+    #[test]
+    fn expired_token_without_refresh_token_returns_none() {
+        let secrets = Arc::new(StubSecrets::default());
+        let config =
+            Arc::new(StubConfig::default().with("OAUTH_BASE_URL", "https://global.example"));
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = OAuthBroker::new(
+            secrets,
+            config,
+            Arc::clone(&tokens),
+            vec![Arc::new(DummyProvider)],
+        );
+        let tenant_ctx = TenantCtx::new(
+            EnvId::try_from("dev").expect("env"),
+            TenantId::try_from("tenant").expect("tenant"),
+        );
+        let expired = TokenSet {
+            access_token: "old".into(),
+            refresh_token: None,
+            expires_at: Some(0),
+            token_type: Some("Bearer".into()),
+            extra: Value::Null,
+        };
+        tokens
+            .save_token(&tenant_ctx, "dummy", "user1", &expired)
+            .unwrap();
+
+        let token = broker
+            .get_token(&tenant_ctx, "dummy", "user1", &[])
+            .expect("get token");
+        assert!(token.is_none());
+    }
+
+    #[test]
+    fn expired_token_returns_none_when_provider_cannot_refresh() {
+        let secrets = Arc::new(
+            StubSecrets::default()
+                .with("OAUTH_NO_REFRESH_CLIENT_ID", "client")
+                .with("OAUTH_NO_REFRESH_CLIENT_SECRET", "secret"),
+        );
+        let config =
+            Arc::new(StubConfig::default().with("OAUTH_BASE_URL", "https://global.example"));
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = OAuthBroker::new(
+            secrets,
+            config,
+            Arc::clone(&tokens),
+            vec![Arc::new(NoRefreshProvider)],
+        );
+        let tenant_ctx = TenantCtx::new(
+            EnvId::try_from("dev").expect("env"),
+            TenantId::try_from("tenant").expect("tenant"),
+        );
+        let expired = TokenSet {
+            access_token: "old".into(),
+            refresh_token: Some("refresh-value".into()),
+            expires_at: Some(0),
+            token_type: Some("Bearer".into()),
+            extra: Value::Null,
+        };
+        tokens
+            .save_token(&tenant_ctx, "no-refresh", "user1", &expired)
+            .unwrap();
+
+        let token = broker
+            .get_token(&tenant_ctx, "no-refresh", "user1", &[])
+            .expect("get token");
+        assert!(token.is_none());
+    }
+
+    #[test]
+    fn provider_secret_keys_normalize_non_alphanumeric_chars() {
+        assert_eq!(
+            client_id_key("ms-graph/v2"),
+            "OAUTH_MS_GRAPH_V2_CLIENT_ID".to_string()
+        );
+        assert_eq!(
+            client_secret_key("ms-graph/v2"),
+            "OAUTH_MS_GRAPH_V2_CLIENT_SECRET".to_string()
+        );
     }
 
     #[test]
@@ -1009,5 +1214,42 @@ mod tests {
         let fetched_json = host.get_token("dummy".into(), "subject-1".into(), vec![]);
         let fetched: TokenSet = serde_json::from_str(&fetched_json).expect("token json");
         assert_eq!(fetched.access_token, token.access_token);
+    }
+
+    #[test]
+    fn broker_host_returns_empty_string_on_provider_errors() {
+        let secrets = Arc::new(StubSecrets::default());
+        let config =
+            Arc::new(StubConfig::default().with("OAUTH_BASE_URL", "https://global.example"));
+        let tokens = Arc::new(InMemoryTokenStore::new());
+        let broker = Arc::new(OAuthBroker::new(secrets, config, tokens, vec![]));
+        let host = BrokerHost::new(
+            broker,
+            TenantCtx::new(
+                EnvId::try_from("dev").expect("env"),
+                TenantId::try_from("acme").expect("tenant"),
+            ),
+        );
+
+        let consent = host.get_consent_url(
+            "missing-provider".into(),
+            "subject-1".into(),
+            vec![],
+            "/cb".into(),
+            String::new(),
+        );
+        assert!(consent.is_empty());
+
+        let exchanged = host.exchange_code(
+            "missing-provider".into(),
+            "subject-1".into(),
+            "code-123".into(),
+            "/cb".into(),
+            vec![],
+        );
+        assert!(exchanged.is_empty());
+
+        let fetched = host.get_token("missing-provider".into(), "subject-1".into(), vec![]);
+        assert!(fetched.is_empty());
     }
 }

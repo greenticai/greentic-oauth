@@ -180,9 +180,8 @@ jobs:
           dry-run: false
 
   publish-packs:
-    # Temporary PR publishing for validation. Remove before merge.
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    needs: build-packs
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [build-packs, publish-crates]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -190,28 +189,70 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Detect version change
+        id: detect_version_change
+        run: |
+          set -euo pipefail
+
+          read_workspace_version() {
+            python3 - <<'PY'
+from pathlib import Path
+import tomllib
+
+data = tomllib.loads(Path("Cargo.toml").read_text(encoding="utf-8"))
+print(data.get("workspace", {}).get("package", {}).get("version", "0.0.0"))
+PY
+          }
+
+          current_version="$(read_workspace_version)"
+          before_sha="${{ github.event.before }}"
+          should_publish="true"
+
+          if [ -n "${before_sha}" ] && git cat-file -e "${before_sha}:Cargo.toml" 2>/dev/null; then
+            previous_version="$(
+              git show "${before_sha}:Cargo.toml" \
+                | python3 -c 'import sys,tomllib; print(tomllib.loads(sys.stdin.read()).get("workspace", {}).get("package", {}).get("version", "0.0.0"))'
+            )"
+            if [ "${previous_version}" = "${current_version}" ]; then
+              should_publish="false"
+            fi
+          fi
+
+          echo "version=${current_version}" >> "${GITHUB_OUTPUT}"
+          echo "should_publish=${should_publish}" >> "${GITHUB_OUTPUT}"
+          echo "Detected workspace version ${current_version}; should_publish=${should_publish}"
+
       - name: Install oras
+        if: steps.detect_version_change.outputs.should_publish == 'true'
         uses: oras-project/setup-oras@v1
         with:
           version: 1.2.0
 
       - name: Download built packs
+        if: steps.detect_version_change.outputs.should_publish == 'true'
         uses: actions/download-artifact@v4
         with:
           name: oauth-gtpack-artifacts
           path: dist/packs
 
       - name: Login to GHCR
-        run: echo "${{ secrets.TO_DELETE_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+        if: steps.detect_version_change.outputs.should_publish == 'true'
+        run: echo "${{ github.token }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Publish packs
+        if: steps.detect_version_change.outputs.should_publish == 'true'
         env:
           OCI_NAMESPACE: ${{ github.repository_owner }}
-          PACK_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          PACK_VERSION: ${{ steps.detect_version_change.outputs.version }}
           PUBLISH_LATEST: "1"
         run: ./ci/publish_packs.sh
 
+      - name: Skip publish (no version change)
+        if: steps.detect_version_change.outputs.should_publish != 'true'
+        run: echo "No workspace version change detected. Skipping pack publish."
+
       - name: Upload published packs lockfile
+        if: steps.detect_version_change.outputs.should_publish == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: packs-lockfile-published
