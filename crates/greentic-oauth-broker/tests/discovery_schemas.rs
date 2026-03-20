@@ -32,7 +32,7 @@ use greentic_oauth_broker::{
 };
 use http_body_util::BodyExt;
 use jsonschema::{Validator, validator_for};
-use rand::{TryRngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use serde_json::{Value, json};
 use tempfile::tempdir;
 use url::Url;
@@ -71,7 +71,7 @@ fn validate(schema: &Validator, data: &Value) {
 
 fn random_bytes() -> [u8; 32] {
     let mut key = [0u8; 32];
-    OsRng
+    SysRng
         .try_fill_bytes(&mut key)
         .expect("os entropy source unavailable");
     key

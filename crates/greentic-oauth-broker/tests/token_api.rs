@@ -39,7 +39,7 @@ use greentic_oauth_core::{
     provider_tokens::{ProviderOAuthClientConfig, ProviderOAuthFlow, client_credentials_path},
 };
 use greentic_types::{EnvId, TenantId};
-use rand::{TryRngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use serde_json::{Value, json};
 use tempfile::tempdir;
 use tokio::{net::TcpListener, task::JoinHandle};
@@ -54,7 +54,7 @@ const PROVIDER_ID: &str = "fake";
 
 fn random_bytes() -> [u8; 32] {
     let mut key = [0u8; 32];
-    OsRng
+    SysRng
         .try_fill_bytes(&mut key)
         .expect("os entropy source unavailable");
     key

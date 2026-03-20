@@ -4,8 +4,8 @@
 )]
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use rand::TryRngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 
 use aes_gcm::Aes256Gcm;
 use aes_gcm::aead::generic_array::{GenericArray, typenum::U12, typenum::U16};
@@ -38,7 +38,7 @@ impl JweVault {
     /// Encrypt a token set into a compact JWE representation.
     pub fn encrypt(&self, token_set: &TokenSet) -> Result<String, SecurityError> {
         let mut nonce_bytes = [0u8; 12];
-        let mut rng = OsRng;
+        let mut rng = SysRng;
         rng.try_fill_bytes(&mut nonce_bytes)
             .expect("os entropy source unavailable");
         let nonce: GenericArray<u8, U12> = GenericArray::clone_from_slice(&nonce_bytes);
@@ -120,11 +120,11 @@ impl JweVault {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::{TryRngCore, rngs::OsRng};
+    use rand::{TryRng, rngs::SysRng};
 
     fn random_key() -> [u8; 32] {
         let mut key = [0u8; 32];
-        OsRng
+        SysRng
             .try_fill_bytes(&mut key)
             .expect("os entropy source unavailable");
         key

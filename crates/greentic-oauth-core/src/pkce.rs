@@ -1,6 +1,9 @@
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use rand::{Rng, distr::Alphanumeric};
+use rand::{
+    Rng,
+    distr::{Alphanumeric, SampleString},
+};
 use sha2::{Digest, Sha256};
 
 /// Length of the PKCE verifier string.
@@ -27,7 +30,7 @@ impl PkcePair {
 
     /// Generate a PKCE pair using the provided RNG.
     pub fn generate_with_rng<R: Rng + ?Sized>(len: usize, rng: &mut R) -> Self {
-        let verifier: String = (0..len).map(|_| rng.sample(Alphanumeric) as char).collect();
+        let verifier = Alphanumeric.sample_string(rng, len);
 
         let challenge = Self::challenge_for(&verifier);
         Self {

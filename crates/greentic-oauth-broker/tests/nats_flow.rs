@@ -33,7 +33,7 @@ use greentic_oauth_core::{
     types::{OAuthFlowRequest, OAuthFlowResult, OwnerKind, TokenHandleClaims, TokenSet},
 };
 use greentic_types::{EnvId, TenantId};
-use rand::{TryRngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use serde::Deserialize;
 use serde_json::json;
 use tempfile::tempdir;
@@ -181,7 +181,7 @@ fn config_root_path() -> PathBuf {
 
 fn random_bytes() -> [u8; 32] {
     let mut key = [0u8; 32];
-    OsRng
+    SysRng
         .try_fill_bytes(&mut key)
         .expect("os entropy source unavailable");
     key

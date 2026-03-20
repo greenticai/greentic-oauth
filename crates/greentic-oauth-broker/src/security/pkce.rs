@@ -1,7 +1,7 @@
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-use rand::TryRngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 use sha2::{Digest, Sha256};
 
 /// Combined PKCE verifier + challenge pair using the S256 method.
@@ -15,7 +15,7 @@ impl PkcePair {
     /// Generate a new verifier + challenge pair using RFC 7636 S256.
     pub fn generate() -> Self {
         let mut entropy = [0u8; 32];
-        let mut rng = OsRng;
+        let mut rng = SysRng;
         rng.try_fill_bytes(&mut entropy)
             .expect("os entropy source unavailable");
         let verifier = URL_SAFE_NO_PAD.encode(entropy);

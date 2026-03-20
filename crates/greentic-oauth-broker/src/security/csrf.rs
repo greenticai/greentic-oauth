@@ -3,8 +3,8 @@ use std::fmt;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use hmac::{Hmac, Mac};
-use rand::TryRngCore;
-use rand::rngs::OsRng;
+use rand::TryRng;
+use rand::rngs::SysRng;
 use sha2::Sha256;
 
 use super::SecurityError;
@@ -73,7 +73,7 @@ impl CsrfKey {
 
     fn generate_random_token(&self, prefix: &str) -> Result<String, SecurityError> {
         let mut entropy = [0u8; 16];
-        let mut rng = OsRng;
+        let mut rng = SysRng;
         rng.try_fill_bytes(&mut entropy)
             .expect("os entropy source unavailable");
         let value = URL_SAFE_NO_PAD.encode(entropy);

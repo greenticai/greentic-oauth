@@ -27,7 +27,7 @@ use greentic_oauth_broker::{
     storage::{StorageIndex, env::EnvSecretsManager},
 };
 use http_body_util::BodyExt;
-use rand::{TryRngCore, rngs::OsRng};
+use rand::{TryRng, rngs::SysRng};
 use tempfile::tempdir;
 use tower::ServiceExt;
 use url::Url;
@@ -38,7 +38,7 @@ fn config_root_path() -> PathBuf {
 
 fn random_bytes() -> [u8; 32] {
     let mut key = [0u8; 32];
-    OsRng
+    SysRng
         .try_fill_bytes(&mut key)
         .expect("os entropy source unavailable");
     key
