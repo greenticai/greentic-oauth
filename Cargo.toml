@@ -4,6 +4,9 @@ members = [
     "crates/greentic-oauth-broker",
     "crates/greentic-oauth-host",
     "crates/greentic-oauth-sdk",
+    "components/oidc-ingress",
+    "components/oidc-provider",
+    "components/oidc-provider-runtime",
     "examples/axum-app",
     "apps/oauth-testharness",
     "crates/greentic-oauth-client",
@@ -27,6 +30,7 @@ greentic-telemetry = { version = "0.4" }
 greentic-types = { version = "0.4", default-features = false }
 greentic-interfaces-host = {  version = "0.4", default-features = false }
 greentic-interfaces-wasmtime = { version = "0.4", default-features = false }
+greentic-interfaces-guest = { version = "0.4", default-features = false }
 greentic-config = { version = "0.4" }
 greentic-config-types = { version = "0.4" }
 opentelemetry = { version = "0.31", features = ["metrics", "trace"] }
@@ -82,4 +86,5 @@ http = "1"
 chrono = { version = "0.4", features = ["serde"] }
 toml = "0.9"
 serial_test = "3"
+wit-bindgen = "0.53"
 

@@ -1,4 +1,4 @@
-.PHONY: build test run fmt fmt-check clippy lint check docker
+.PHONY: build test run fmt fmt-check clippy lint check docker oidc-pack-build oidc-pack-clean
 
 build:
 	cargo build --workspace
@@ -24,3 +24,9 @@ check: fmt-check clippy test
 
 docker:
 	@echo "docker target not yet implemented"
+
+oidc-pack-build:
+	./scripts/build-oidc-executable-pack.sh
+
+oidc-pack-clean:
+	./scripts/clean-oidc-executable-pack.sh

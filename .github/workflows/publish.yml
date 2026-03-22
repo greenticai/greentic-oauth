@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-test:
@@ -49,3 +50,56 @@ jobs:
           ignore-unpublished-changes: true
           check-repo: true
           dry-run: false
+
+  publish-oidc-pack:
+    if: github.event_name == 'push'
+    needs: build-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          channel: 1.91.0
+          targets: wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install greentic-pack CLI
+        run: |
+          if ! command -v greentic-pack >/dev/null 2>&1; then
+            cargo install --locked greentic-pack
+          fi
+
+      - name: Install oras
+        uses: oras-project/setup-oras@v1
+
+      - name: Build OIDC executable pack
+        run: ./scripts/build-oidc-executable-pack.sh
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Publish OIDC executable pack to GHCR
+        env:
+          PACK_REPO: ghcr.io/${{ github.repository_owner }}/oauth-oidc-executable-pack
+          PACK_FILE: dist/packs/oauth-oidc-executable.gtpack
+        run: |
+          oras push "${PACK_REPO}:${GITHUB_SHA}" \
+            --artifact-type application/vnd.greentic.gtpack.v1+binary \
+            "${PACK_FILE}:application/vnd.greentic.gtpack.layer.v1+binary"
+
+          if [[ "${GITHUB_REF_NAME}" == "master" ]]; then
+            oras tag "${PACK_REPO}:${GITHUB_SHA}" latest
+          fi
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            oras tag "${PACK_REPO}:${GITHUB_SHA}" "${GITHUB_REF_NAME}"
+          fi
+
+      - name: Cleanup pack artifacts
+        if: always()
+        run: ./scripts/clean-oidc-executable-pack.sh

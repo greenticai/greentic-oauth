@@ -1,0 +1,16 @@
+package greentic:oidc-ingress@0.1.0;
+
+interface callback-api {
+  /// Normalize callback query parameters for OIDC.
+  /// Returns a JSON string on success or a validation error string.
+  handle-callback: func(
+    query-string: string,
+    provider-id: string,
+    tenant: string
+  ) -> result<string, string>;
+}
+
+world callback {
+  export callback-api;
+}
+

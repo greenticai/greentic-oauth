@@ -1541,6 +1541,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "greentic-interfaces-guest"
+version = "0.4.111"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ec03f293f877e84443fc84b90bb0b7c3f1501ff2750cefc39f442946c7f4969"
+dependencies = [
+ "greentic-types",
+ "wit-bindgen 0.54.0",
+ "wit-bindgen-core 0.54.0",
+ "wit-bindgen-rust 0.54.0",
+]
+
+[[package]]
 name = "greentic-interfaces-host"
 version = "0.4.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2658,6 +2670,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "oidc-ingress"
+version = "0.4.25"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "url",
+ "wit-bindgen 0.53.1",
+]
+
+[[package]]
+name = "oidc-provider"
+version = "0.4.25"
+dependencies = [
+ "greentic-interfaces-guest",
+ "thiserror 2.0.18",
+ "url",
+]
+
+[[package]]
+name = "oidc-provider-runtime"
+version = "0.4.25"
+dependencies = [
+ "oidc-provider",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "url",
+ "wit-bindgen 0.53.1",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3473,7 +3517,7 @@ dependencies = [
  "once_cell",
  "ring",
  "rustls-pki-types",
- "rustls-webpki 0.103.9",
+ "rustls-webpki 0.103.10",
  "subtle",
  "zeroize",
 ]
@@ -3536,7 +3580,7 @@ dependencies = [
  "rustls",
  "rustls-native-certs 0.8.3",
  "rustls-platform-verifier-android",
- "rustls-webpki 0.103.9",
+ "rustls-webpki 0.103.10",
  "security-framework 3.7.0",
  "security-framework-sys",
  "webpki-root-certs",
@@ -3561,9 +3605,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.9"
+version = "0.103.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7df23109aa6c1567d1c575b9952556388da57401e4ace1d15f79eedad0d8f53"
+checksum = "df33b2b81ac578cabaf06b89b0631153a3f416b0a886e8a7a1707fb51abbd1ef"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -4647,9 +4691,9 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "ureq"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdc97a28575b85cfedf2a7e7d3cc64b3e11bd8ac766666318003abbacc7a21fc"
+checksum = "dea7109cdcd5864d4eeb1b58a1648dc9bf520360d7af16ec26d0a9354bafcfc0"
 dependencies = [
  "base64 0.22.1",
  "cookie_store",
@@ -4661,15 +4705,15 @@ dependencies = [
  "serde",
  "serde_json",
  "ureq-proto",
- "utf-8",
+ "utf8-zero",
  "webpki-roots 1.0.6",
 ]
 
 [[package]]
 name = "ureq-proto"
-version = "0.5.3"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d81f9efa9df032be5934a46a068815a10a042b494b6a58cb0a1a97bb5467ed6f"
+checksum = "e994ba84b0bd1b1b0cf92878b7ef898a5c1760108fe7b6010327e274917a808c"
 dependencies = [
  "base64 0.22.1",
  "http",
@@ -4691,10 +4735,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "utf-8"
-version = "0.7.6"
+name = "utf8-zero"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
+checksum = "b8c0a043c9540bae7c578c88f91dda8bd82e59ae27c21baca69c8b191aaf5a6e"
 
 [[package]]
 name = "utf8_iter"
@@ -5561,6 +5605,16 @@ dependencies = [
 
 [[package]]
 name = "wit-bindgen"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e915216dde3e818093168df8380a64fba25df468d626c80dd5d6a184c87e7c7"
+dependencies = [
+ "bitflags",
+ "wit-bindgen-rust-macro 0.53.1",
+]
+
+[[package]]
+name = "wit-bindgen"
 version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2bb00254d5051d69730ee32580b7373592f10ad786757c372f0f2c7b61f86a2c"
@@ -5577,6 +5631,17 @@ dependencies = [
  "anyhow",
  "heck",
  "wit-parser 0.244.0",
+]
+
+[[package]]
+name = "wit-bindgen-core"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3deda4b7e9f522d994906f6e6e0fc67965ea8660306940a776b76732be8f3933"
+dependencies = [
+ "anyhow",
+ "heck",
+ "wit-parser 0.245.1",
 ]
 
 [[package]]
@@ -5608,6 +5673,22 @@ dependencies = [
 
 [[package]]
 name = "wit-bindgen-rust"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "863a7ab3c4dfee58db196811caeb0718b88412a0aef3d1c2b02fcbae1e37c688"
+dependencies = [
+ "anyhow",
+ "heck",
+ "indexmap 2.13.0",
+ "prettyplease",
+ "syn",
+ "wasm-metadata 0.245.1",
+ "wit-bindgen-core 0.53.1",
+ "wit-component 0.245.1",
+]
+
+[[package]]
+name = "wit-bindgen-rust"
 version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e76541e2f37ac1729db85765729daa0f3c2b5975d66699114d107525f6d6c8d5"
@@ -5635,6 +5716,21 @@ dependencies = [
  "syn",
  "wit-bindgen-core 0.51.0",
  "wit-bindgen-rust 0.51.0",
+]
+
+[[package]]
+name = "wit-bindgen-rust-macro"
+version = "0.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d14f3a9bfa3804bb0e9ab7f66da047f210eded6a1297ae3ba5805b384d64797f"
+dependencies = [
+ "anyhow",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "syn",
+ "wit-bindgen-core 0.53.1",
+ "wit-bindgen-rust 0.53.1",
 ]
 
 [[package]]

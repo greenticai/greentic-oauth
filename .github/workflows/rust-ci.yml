@@ -25,6 +25,7 @@ jobs:
         with:
           channel: 1.91.0
           components: rustfmt, clippy
+          targets: wasm32-wasip2
 
       - name: Cache cargo directories
         uses: actions/cache@v4
@@ -57,8 +58,18 @@ jobs:
       - name: Cargo test
         run: cargo test --workspace --all-features
 
+      - name: Install greentic-pack CLI (for pack build)
+        run: |
+          if ! command -v greentic-pack >/dev/null 2>&1; then
+            cargo install --locked greentic-pack
+          fi
+
+      - name: Build OIDC executable pack
+        run: ./scripts/build-oidc-executable-pack.sh
+
       - name: Cleanup build artifacts
         if: always()
         run: |
           rm -rf "$CARGO_TARGET_DIR"
           rm -rf target
+          ./scripts/clean-oidc-executable-pack.sh

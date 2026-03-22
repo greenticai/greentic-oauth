@@ -1,0 +1,18 @@
+[package]
+name = "oidc-provider"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+license = "MIT"
+description = "OIDC provider logic for component-style execution with host-derived callback URLs."
+
+[features]
+default = []
+wit-http = ["dep:greentic-interfaces-guest"]
+
+[dependencies]
+thiserror.workspace = true
+url.workspace = true
+greentic-interfaces-guest = { workspace = true, optional = true, default-features = false, features = ["http-client-v1-1"] }
