@@ -96,20 +96,19 @@ pub fn dispatch(
                 .execute_http
                 .unwrap_or(matches!(envelope.op.as_str(), "oauth.get_access_token"));
             redirect_uri_override = input.redirect_uri.clone();
-            component.execute_operation(ExtensionOperation::ExchangeCode(
-                ExchangeCodeRequest {
-                    tenant: input.tenant,
-                    code: input.code,
-                    code_verifier: input.code_verifier,
-                },
-            ))?
+            component.execute_operation(ExtensionOperation::ExchangeCode(ExchangeCodeRequest {
+                tenant: input.tenant,
+                code: input.code,
+                code_verifier: input.code_verifier,
+            }))?
         }
         "oidc.refresh-token" | "refresh-token" | "oauth.request_resource_token" => {
             let input: RefreshInput = serde_json::from_value(envelope.input)
                 .map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
-            execute_http = input
-                .execute_http
-                .unwrap_or(matches!(envelope.op.as_str(), "oauth.request_resource_token"));
+            execute_http = input.execute_http.unwrap_or(matches!(
+                envelope.op.as_str(),
+                "oauth.request_resource_token"
+            ));
             component.execute_operation(ExtensionOperation::RefreshToken(RefreshRequest {
                 refresh_token: input.refresh_token,
                 scopes: input.scopes,
@@ -151,7 +150,11 @@ pub fn dispatch(
     })
 }
 
-fn execute_http_request(req: &oidc_provider::HttpRequest, op: &str, redirect_uri_override: Option<&str>) -> Result<Value, RuntimeError> {
+fn execute_http_request(
+    req: &oidc_provider::HttpRequest,
+    op: &str,
+    redirect_uri_override: Option<&str>,
+) -> Result<Value, RuntimeError> {
     #[cfg(target_arch = "wasm32")]
     {
         let request = with_redirect_uri_override(req, redirect_uri_override);
@@ -168,7 +171,9 @@ fn execute_http_request(req: &oidc_provider::HttpRequest, op: &str, redirect_uri
         let body = response.body.unwrap_or_default();
         let payload = parse_token_payload(&body);
         if !(200..300).contains(&status) {
-            return Err(RuntimeError::InvalidInput(token_error_message(status, &payload)));
+            return Err(RuntimeError::InvalidInput(token_error_message(
+                status, &payload,
+            )));
         }
 
         let access_token = payload
@@ -208,14 +213,18 @@ fn with_redirect_uri_override(
     req: &oidc_provider::HttpRequest,
     redirect_uri_override: Option<&str>,
 ) -> oidc_provider::HttpRequest {
-    let Some(redirect_uri_override) = redirect_uri_override.filter(|value| !value.trim().is_empty()) else {
+    let Some(redirect_uri_override) =
+        redirect_uri_override.filter(|value| !value.trim().is_empty())
+    else {
         return req.clone();
     };
     let Some(body) = req.body.as_ref() else {
         return req.clone();
     };
 
-    let mut params = url::form_urlencoded::parse(body).into_owned().collect::<Vec<(String, String)>>();
+    let mut params = url::form_urlencoded::parse(body)
+        .into_owned()
+        .collect::<Vec<(String, String)>>();
     if params.is_empty() {
         return req.clone();
     }
@@ -229,7 +238,10 @@ fn with_redirect_uri_override(
         }
     }
     if !found {
-        params.push(("redirect_uri".to_string(), redirect_uri_override.to_string()));
+        params.push((
+            "redirect_uri".to_string(),
+            redirect_uri_override.to_string(),
+        ));
     }
 
     let mut encoded = url::form_urlencoded::Serializer::new(String::new());
@@ -305,54 +317,53 @@ fn handle_ingest_http(input: Value, default_provider_id: &str) -> Result<Value, 
         .or_else(|| tenant_from_ingress_path(&path))
         .unwrap_or_else(|| "default".to_string());
 
-    let (status, body_json) = if !method.eq_ignore_ascii_case("GET")
-        && !method.eq_ignore_ascii_case("POST")
-    {
-        (
-            405u16,
-            json!({
-                "ok": false,
-                "error": "only GET/POST callbacks are supported",
-                "provider_id": provider_id,
-                "tenant": tenant,
-                "method": method
-            }),
-        )
-    } else if state.is_empty() {
-        (
-            400u16,
-            json!({
-                "ok": false,
-                "error": "missing state query parameter",
-                "provider_id": provider_id,
-                "tenant": tenant
-            }),
-        )
-    } else if code.is_none() && error.is_none() {
-        (
-            400u16,
-            json!({
-                "ok": false,
-                "error": "missing code or error query parameter",
-                "provider_id": provider_id,
-                "tenant": tenant,
-                "state": state
-            }),
-        )
-    } else {
-        (
-            200u16,
-            json!({
-                "ok": error.is_none(),
-                "provider_id": provider_id,
-                "tenant": tenant,
-                "state": state,
-                "code": code,
-                "error": error,
-                "error_description": error_description
-            }),
-        )
-    };
+    let (status, body_json) =
+        if !method.eq_ignore_ascii_case("GET") && !method.eq_ignore_ascii_case("POST") {
+            (
+                405u16,
+                json!({
+                    "ok": false,
+                    "error": "only GET/POST callbacks are supported",
+                    "provider_id": provider_id,
+                    "tenant": tenant,
+                    "method": method
+                }),
+            )
+        } else if state.is_empty() {
+            (
+                400u16,
+                json!({
+                    "ok": false,
+                    "error": "missing state query parameter",
+                    "provider_id": provider_id,
+                    "tenant": tenant
+                }),
+            )
+        } else if code.is_none() && error.is_none() {
+            (
+                400u16,
+                json!({
+                    "ok": false,
+                    "error": "missing code or error query parameter",
+                    "provider_id": provider_id,
+                    "tenant": tenant,
+                    "state": state
+                }),
+            )
+        } else {
+            (
+                200u16,
+                json!({
+                    "ok": error.is_none(),
+                    "provider_id": provider_id,
+                    "tenant": tenant,
+                    "state": state,
+                    "code": code,
+                    "error": error,
+                    "error_description": error_description
+                }),
+            )
+        };
 
     Ok(json!({
         "http": {
@@ -428,9 +439,12 @@ fn resolve_client_credentials(
                 .as_ref()
                 .map(|v| v.trim())
                 .filter(|v| !v.is_empty())
-                .ok_or_else(|| RuntimeError::InvalidInput("client_id or client_id_key is required".into()))?;
-            read_secret_utf8(key)?
-                .ok_or_else(|| RuntimeError::InvalidInput(format!("missing secret for key `{key}`")))?
+                .ok_or_else(|| {
+                    RuntimeError::InvalidInput("client_id or client_id_key is required".into())
+                })?;
+            read_secret_utf8(key)?.ok_or_else(|| {
+                RuntimeError::InvalidInput(format!("missing secret for key `{key}`"))
+            })?
         }
     };
 
@@ -448,11 +462,9 @@ fn resolve_client_credentials(
                 .map(|v| v.trim())
                 .filter(|v| !v.is_empty())
             {
-                Some(
-                    read_secret_utf8(key)?.ok_or_else(|| {
-                        RuntimeError::InvalidInput(format!("missing secret for key `{key}`"))
-                    })?,
-                )
+                Some(read_secret_utf8(key)?.ok_or_else(|| {
+                    RuntimeError::InvalidInput(format!("missing secret for key `{key}`"))
+                })?)
             } else {
                 None
             }

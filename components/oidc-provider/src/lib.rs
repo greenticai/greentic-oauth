@@ -3,13 +3,8 @@ use std::collections::BTreeMap;
 use thiserror::Error;
 use url::Url;
 
-const ALLOWED_EXTRA_AUTH_PARAMS: [&str; 5] = [
-    "prompt",
-    "login_hint",
-    "access_type",
-    "resource",
-    "claims",
-];
+const ALLOWED_EXTRA_AUTH_PARAMS: [&str; 5] =
+    ["prompt", "login_hint", "access_type", "resource", "claims"];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HostConfig {
@@ -206,11 +201,11 @@ impl OidcComponent {
                 let redirect_uri = self.redirect_uri(&req.tenant)?;
                 Ok(ExtensionOperationResult::AuthorizeUrlBuilt { url, redirect_uri })
             }
-            ExtensionOperation::ExchangeCode(req) => Ok(
-                ExtensionOperationResult::HttpRequestPrepared(
+            ExtensionOperation::ExchangeCode(req) => {
+                Ok(ExtensionOperationResult::HttpRequestPrepared(
                     self.exchange_code_http_request(&req)?,
-                ),
-            ),
+                ))
+            }
             ExtensionOperation::RefreshToken(req) => Ok(
                 ExtensionOperationResult::HttpRequestPrepared(self.refresh_http_request(&req)?),
             ),
@@ -437,10 +432,12 @@ mod tests {
             })
             .expect("form");
 
-        assert!(form.iter().any(|(k, v)| k == "grant_type" && v == "authorization_code"));
+        assert!(
+            form.iter()
+                .any(|(k, v)| k == "grant_type" && v == "authorization_code")
+        );
         assert!(form.iter().any(|(k, v)| {
-            k == "redirect_uri"
-                && v == "https://auth.acme.example/oauth/callback/acme/oidc-generic"
+            k == "redirect_uri" && v == "https://auth.acme.example/oauth/callback/acme/oidc-generic"
         }));
     }
 
@@ -457,10 +454,12 @@ mod tests {
 
         assert_eq!(request.method, "POST");
         assert_eq!(request.url, "https://issuer.example.com/oauth2/v1/token");
-        assert!(request
-            .headers
-            .iter()
-            .any(|(k, v)| k == "content-type" && v == "application/x-www-form-urlencoded"));
+        assert!(
+            request
+                .headers
+                .iter()
+                .any(|(k, v)| k == "content-type" && v == "application/x-www-form-urlencoded")
+        );
         let body = String::from_utf8(request.body.expect("body")).expect("utf8");
         assert!(body.contains("grant_type=authorization_code"));
         assert!(body.contains("code=code-xyz"));
@@ -492,9 +491,10 @@ mod tests {
             })
             .expect("form");
 
-        assert!(form
-            .iter()
-            .any(|(k, v)| k == "scope" && v == "openid profile offline_access"));
+        assert!(
+            form.iter()
+                .any(|(k, v)| k == "scope" && v == "openid profile offline_access")
+        );
     }
 
     #[test]
@@ -603,8 +603,9 @@ mod tests {
             })
             .expect("form");
 
-        assert!(form
-            .iter()
-            .any(|(k, v)| k == "client_secret" && v == "secret-abc"));
+        assert!(
+            form.iter()
+                .any(|(k, v)| k == "client_secret" && v == "secret-abc")
+        );
     }
 }

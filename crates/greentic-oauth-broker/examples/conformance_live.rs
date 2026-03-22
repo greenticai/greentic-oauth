@@ -1,6 +1,6 @@
-use std::{borrow::Cow, collections::HashSet, env, fmt, time::Duration};
+use std::{collections::HashSet, env, fmt, time::Duration};
 
-use anyhow::{anyhow, Context, Error};
+use anyhow::{Context, Error, anyhow};
 use clap::{Parser, ValueEnum};
 use reqwest::{Client, StatusCode};
 use serde::Deserialize;
@@ -30,7 +30,9 @@ enum ProviderArg {
 enum CheckKind {
     Discovery,
     Jwks,
+    #[value(alias = "client_credentials")]
     ClientCredentials,
+    #[value(alias = "signed_fetch")]
     SignedFetch,
     Refresh,
     Revocation,
@@ -168,8 +170,8 @@ impl Runner {
         let mut results = Vec::new();
         let mut seen = HashSet::new();
 
-        for kind in &self.checks {
-            if !seen.insert(*kind) {
+        for kind in self.checks.clone() {
+            if !seen.insert(kind) {
                 continue;
             }
             let result = match kind {
@@ -196,8 +198,7 @@ impl Runner {
             let info = self.fetch_discovery().await?;
             self.discovery = Some(info);
         }
-        self
-            .discovery
+        self.discovery
             .as_ref()
             .ok_or_else(|| anyhow!("discovery document unavailable"))
     }
@@ -227,10 +228,7 @@ impl Runner {
             .await
             .with_context(|| format!("discovery GET {url}"))?;
         let status = resp.status();
-        let body_text = resp
-            .text()
-            .await
-            .context("read discovery response body")?;
+        let body_text = resp.text().await.context("read discovery response body")?;
         if !status.is_success() {
             return Err(anyhow!(
                 "discovery endpoint {url} returned HTTP {} body={}",
@@ -286,10 +284,7 @@ impl Runner {
                         "issuer={} jwks_uri={} revocation={}",
                         doc.issuer,
                         doc.jwks_uri,
-                        doc
-                            .revocation_endpoint_raw
-                            .as_deref()
-                            .unwrap_or("<none>")
+                        doc.revocation_endpoint_raw.as_deref().unwrap_or("<none>")
                     ),
                 )
             }
@@ -307,7 +302,7 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::Jwks,
                     format!("discovery not available: {err:?}"),
-                )
+                );
             }
         };
         let requested = doc.jwks_uri.clone();
@@ -337,10 +332,7 @@ impl Runner {
                                 if key_count > 0 {
                                     CheckResult::pass(
                                         CheckKind::Jwks,
-                                        format!(
-                                            "jwks ok (keys={key_count}) uri={}",
-                                            requested
-                                        ),
+                                        format!("jwks ok (keys={key_count}) uri={}", requested),
                                     )
                                 } else {
                                     CheckResult::fail(
@@ -364,10 +356,7 @@ impl Runner {
                     }
                     Err(err) => CheckResult::fail(
                         CheckKind::Jwks,
-                        format!(
-                            "failed to read jwks response from {}: {err:?}",
-                            requested
-                        ),
+                        format!("failed to read jwks response from {}: {err:?}", requested),
                     ),
                 }
             }
@@ -385,7 +374,7 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::ClientCredentials,
                     format!("discovery unavailable: {err:?}"),
-                )
+                );
             }
         };
         let token_endpoint = match self.token_endpoint_url(&doc) {
@@ -394,7 +383,7 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::ClientCredentials,
                     format!("token endpoint missing: {err:?}"),
-                )
+                );
             }
         };
 
@@ -403,10 +392,7 @@ impl Runner {
                 ("grant_type", "client_credentials".to_string()),
                 ("client_id", cfg.client_id.clone()),
                 ("client_secret", cfg.client_secret.clone()),
-                (
-                    "scope",
-                    "https://graph.microsoft.com/.default".to_string(),
-                ),
+                ("scope", "https://graph.microsoft.com/.default".to_string()),
             ],
             ProviderConfig::Oidc(cfg) => {
                 let mut params = vec![
@@ -450,8 +436,7 @@ impl Runner {
                                         CheckKind::ClientCredentials,
                                         format!(
                                             "unexpected token_type {} from {}",
-                                            token.token_type,
-                                            token_endpoint
+                                            token.token_type, token_endpoint
                                         ),
                                     );
                                 }
@@ -507,24 +492,22 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::SignedFetch,
                     "client credentials token not available; run client_credentials first",
-                )
+                );
             }
         };
         match &self.provider {
             ProviderConfig::MsGraph(_) => {
                 let url = "https://graph.microsoft.com/v1.0/organization?$top=1";
-                let resp = self
-                    .client
-                    .get(url)
-                    .bearer_auth(&token)
-                    .send()
-                    .await;
+                let resp = self.client.get(url).bearer_auth(&token).send().await;
                 match resp {
                     Ok(resp) if resp.status() == StatusCode::OK => match resp.json::<Value>().await
                     {
                         Ok(json) => {
                             if json.get("value").and_then(Value::as_array).is_some() {
-                                CheckResult::pass(CheckKind::SignedFetch, "Graph organization query ok")
+                                CheckResult::pass(
+                                    CheckKind::SignedFetch,
+                                    "Graph organization query ok",
+                                )
                             } else {
                                 CheckResult::fail(
                                     CheckKind::SignedFetch,
@@ -538,7 +521,9 @@ impl Runner {
                         ),
                     },
                     Ok(resp) if resp.status() == StatusCode::FORBIDDEN => {
-                        warn!("Microsoft Graph responded 403 (likely missing app permission); treating as success for token validity");
+                        warn!(
+                            "Microsoft Graph responded 403 (likely missing app permission); treating as success for token validity"
+                        );
                         CheckResult::pass(
                             CheckKind::SignedFetch,
                             "Graph responded 403 (insufficient permissions) but token valid",
@@ -561,7 +546,7 @@ impl Runner {
                         return CheckResult::fail(
                             CheckKind::SignedFetch,
                             format!("discovery unavailable: {err:?}"),
-                        )
+                        );
                     }
                 };
                 if let Some(endpoint) = doc.userinfo_endpoint {
@@ -618,7 +603,7 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::Refresh,
                     format!("discovery unavailable: {err:?}"),
-                )
+                );
             }
         };
         let token_endpoint = match self.token_endpoint_url(&doc) {
@@ -627,7 +612,7 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::Refresh,
                     format!("token endpoint missing: {err:?}"),
-                )
+                );
             }
         };
         let seeded = match &self.provider {
@@ -640,7 +625,7 @@ impl Runner {
                 return CheckResult::skip(
                     CheckKind::Refresh,
                     "no seeded refresh token provided; skipping",
-                )
+                );
             }
         };
 
@@ -704,7 +689,7 @@ impl Runner {
                 return CheckResult::fail(
                     CheckKind::Revocation,
                     format!("discovery unavailable: {err:?}"),
-                )
+                );
             }
         };
         let Some(raw) = doc.revocation_endpoint_raw.clone() else {
@@ -716,14 +701,13 @@ impl Runner {
                 return CheckResult::skip(
                     CheckKind::Revocation,
                     "no access token available; skipping revocation",
-                )
+                );
             }
         };
-        let resolved = match resolve_endpoint(&doc.issuer, &raw)
-            .and_then(|u| {
-                validate_secure_or_localhost(&u)?;
-                Ok(u)
-            }) {
+        let resolved = match resolve_endpoint(&doc.issuer, &raw).and_then(|u| {
+            validate_secure_or_localhost(&u)?;
+            Ok(u)
+        }) {
             Ok(url) => url,
             Err(err) => {
                 warn!(target: "oauth.conformance", raw, error = %err, "invalid revocation endpoint; skipping");
@@ -733,7 +717,10 @@ impl Runner {
                 );
             }
         };
-        let mut form = vec![("token", token), ("token_type_hint", "access_token".to_string())];
+        let mut form = vec![
+            ("token", token),
+            ("token_type_hint", "access_token".to_string()),
+        ];
         match &self.provider {
             ProviderConfig::MsGraph(cfg) => {
                 form.push(("client_id", cfg.client_id.clone()));
@@ -746,10 +733,7 @@ impl Runner {
         }
 
         match self.client.post(resolved.clone()).form(&form).send().await {
-            Ok(resp)
-                if resp.status().is_success()
-                    || resp.status() == StatusCode::BAD_REQUEST =>
-            {
+            Ok(resp) if resp.status().is_success() || resp.status() == StatusCode::BAD_REQUEST => {
                 CheckResult::pass(
                     CheckKind::Revocation,
                     format!("revocation POST {} responded {}", resolved, resp.status()),
@@ -801,6 +785,7 @@ fn load_provider(arg: ProviderArg) -> Result<ProviderConfig, Error> {
 
 fn env_var(key: &str) -> Result<String, Error> {
     env::var(key)
+        .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .ok_or_else(|| anyhow!("environment variable {key} missing"))
@@ -852,11 +837,10 @@ fn body_preview(body: &str) -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    if env::var_os("RUST_LOG").is_none() {
-        env::set_var("RUST_LOG", "info");
-    }
+    let env_filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
     tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_env_filter(env_filter)
         .pretty()
         .with_target(false)
         .init();
@@ -870,14 +854,19 @@ async fn main() -> Result<(), Error> {
 
     let mut runner = Runner::new(provider, checks)?;
     let results = runner.run().await;
-    let failed = results
+    let failed_checks: Vec<String> = results
         .iter()
-        .any(|result| matches!(result.status, CheckStatus::Fail));
-    if failed {
-        Err(anyhow!("one or more checks failed"))
-    } else {
+        .filter(|result| matches!(result.status, CheckStatus::Fail))
+        .map(|result| format!("{:?}", result.kind))
+        .collect();
+    if failed_checks.is_empty() {
         info!("all requested checks passed");
         Ok(())
+    } else {
+        Err(anyhow!(
+            "one or more checks failed: {}",
+            failed_checks.join(", ")
+        ))
     }
 }
 
