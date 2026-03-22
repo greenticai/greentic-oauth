@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PACK_DIR="${ROOT_DIR}/packs/oidc-executable"
 OUT_DIR="${ROOT_DIR}/dist/packs"
 GT_OUT="${OUT_DIR}/oauth-oidc-executable.gtpack"
+TARGET_DIR="${CARGO_TARGET_DIR:-${ROOT_DIR}/target}"
 
 ensure_wasm_target() {
   if rustup target list --installed | grep -qx "wasm32-wasip2"; then
@@ -28,15 +29,17 @@ echo "==> Building OIDC executable components (wasm32-wasip2)"
 cargo build --release -p oidc-provider-runtime --target wasm32-wasip2
 cargo build --release -p oidc-ingress --target wasm32-wasip2
 
-RUNTIME_WASM="${ROOT_DIR}/target/wasm32-wasip2/release/oidc_provider_runtime.wasm"
-INGRESS_WASM="${ROOT_DIR}/target/wasm32-wasip2/release/oidc_ingress.wasm"
+RUNTIME_WASM="${TARGET_DIR}/wasm32-wasip2/release/oidc_provider_runtime.wasm"
+INGRESS_WASM="${TARGET_DIR}/wasm32-wasip2/release/oidc_ingress.wasm"
 
 if [[ ! -f "${RUNTIME_WASM}" ]]; then
   echo "missing runtime wasm: ${RUNTIME_WASM}" >&2
+  echo "hint: CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-<unset>}" >&2
   exit 1
 fi
 if [[ ! -f "${INGRESS_WASM}" ]]; then
   echo "missing ingress wasm: ${INGRESS_WASM}" >&2
+  echo "hint: CARGO_TARGET_DIR=${CARGO_TARGET_DIR:-<unset>}" >&2
   exit 1
 fi
 
