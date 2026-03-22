@@ -7,7 +7,7 @@ use oidc_provider::{
     HostConfig, OidcComponent, OidcComponentError, OidcProviderConfig, RefreshRequest,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value, json};
+use serde_json::{Value, json};
 use thiserror::Error;
 
 mod bindings {
@@ -209,6 +209,7 @@ fn execute_http_request(
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 fn with_redirect_uri_override(
     req: &oidc_provider::HttpRequest,
     redirect_uri_override: Option<&str>,
@@ -254,6 +255,7 @@ fn with_redirect_uri_override(
     patched
 }
 
+#[cfg(target_arch = "wasm32")]
 fn parse_token_payload(body: &[u8]) -> Value {
     if body.is_empty() {
         return json!({});
@@ -263,7 +265,7 @@ fn parse_token_payload(body: &[u8]) -> Value {
     }
 
     let text = String::from_utf8_lossy(body);
-    let mut form = Map::new();
+    let mut form = serde_json::Map::new();
     for (key, value) in url::form_urlencoded::parse(text.as_bytes()) {
         form.insert(key.into_owned(), Value::String(value.into_owned()));
     }
@@ -276,6 +278,7 @@ fn parse_token_payload(body: &[u8]) -> Value {
     }
 }
 
+#[cfg(target_arch = "wasm32")]
 fn token_error_message(status: u16, payload: &Value) -> String {
     if let Some(description) = payload.get("error_description").and_then(Value::as_str) {
         return format!("token endpoint returned status {status}: {description}");
