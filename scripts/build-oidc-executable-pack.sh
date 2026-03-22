@@ -6,6 +6,24 @@ PACK_DIR="${ROOT_DIR}/packs/oidc-executable"
 OUT_DIR="${ROOT_DIR}/dist/packs"
 GT_OUT="${OUT_DIR}/oauth-oidc-executable.gtpack"
 
+ensure_wasm_target() {
+  if rustup target list --installed | grep -qx "wasm32-wasip2"; then
+    return
+  fi
+
+  if ! command -v rustup >/dev/null 2>&1; then
+    echo "rustup is required to install wasm32-wasip2 target" >&2
+    exit 1
+  fi
+
+  local active_toolchain
+  active_toolchain="$(rustup show active-toolchain | awk '{print $1}')"
+  echo "==> Installing missing target wasm32-wasip2 for ${active_toolchain}"
+  rustup target add wasm32-wasip2 --toolchain "${active_toolchain}"
+}
+
+ensure_wasm_target
+
 echo "==> Building OIDC executable components (wasm32-wasip2)"
 cargo build --release -p oidc-provider-runtime --target wasm32-wasip2
 cargo build --release -p oidc-ingress --target wasm32-wasip2
@@ -40,4 +58,3 @@ echo "==> Building gtpack"
 )
 
 echo "Built ${GT_OUT}"
-
