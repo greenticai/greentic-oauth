@@ -5,6 +5,7 @@ edition.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation.workspace = true
+publish = false
 license = "MIT"
 description = "OIDC provider logic for component-style execution with host-derived callback URLs."
 
