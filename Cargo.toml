@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "crates/greentic-oauth-core",
-    "crates/greentic-oauth-broker",
+    "crates/greentic-oauth-broker", # TODO: delete the oauth-broker and all related references of it
     "crates/greentic-oauth-host",
     "crates/greentic-oauth-sdk",
     "components/oidc-ingress",
