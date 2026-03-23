@@ -1,0 +1,31 @@
+[package]
+name = "oidc-provider-runtime"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+license = "MIT"
+description = "Runtime operation adapter for OIDC extension provider components."
+
+[dependencies]
+oidc-provider = { path = "../oidc-provider", features = ["wit-http"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+url.workspace = true
+wit-bindgen.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[package.metadata.component]
+package = "greentic:oidc-provider-runtime"
+
+[package.metadata.component.target]
+path = "wit/oidc-provider-runtime"
+world = "oidc-provider-runtime"
+
+[package.metadata.component.target.dependencies]
+"greentic:secrets-store" = { path = "wit/oidc-provider-runtime/deps/secrets-store" }
+"greentic:provider-schema-core" = { path = "wit/oidc-provider-runtime/deps/provider-schema-core" }

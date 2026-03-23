@@ -1,52 +1,41 @@
-# Security Fix Report
+# SECURITY_FIX_REPORT
 
 Date: 2026-03-23 (UTC)
 Role: Security Reviewer (CI)
 
-## Inputs Reviewed
-
-- Security alerts JSON:
-  - `dependabot`: `[]`
-  - `code_scanning`: `[]`
+## Inputs
+- Dependabot alerts: `[]`
+- Code scanning alerts: `[]`
 - New PR dependency vulnerabilities: `[]`
-- Local artifacts:
-  - `security-alerts.json`
-  - `dependabot-alerts.json`
-  - `code-scanning-alerts.json`
-  - `pr-vulnerable-changes.json`
 
-## PR Dependency Change Check
+## Analysis Summary
+- Reviewed provided security alerts payload from `security-alerts.json`: no Dependabot or code-scanning findings.
+- Reviewed provided PR vulnerability payload from `pr-vulnerable-changes.json`: no new dependency vulnerabilities.
+- Performed PR dependency-file review against `origin/master...HEAD`.
 
-Checked for dependency-file changes in this PR context using:
+## PR Dependency Review
+Commands run:
+- `git diff --name-only origin/master...HEAD`
+- `git diff --name-only origin/master...HEAD -- 'Cargo.toml' 'Cargo.lock' '**/Cargo.toml' '**/Cargo.lock' 'package.json' 'package-lock.json' '**/package.json' '**/package-lock.json'`
+- `rg -n 'source = "git\+' Cargo.lock`
+- `rg -n '"resolved"\s*:\s*"(git\+|http://)' package-lock.json oauth-worker/package-lock.json oauth-worker/package.json`
 
-- `git diff --name-only`
-- `git diff --name-only --cached`
-- Untracked dependency files via `git ls-files --others --exclude-standard`
-
-Result: No changed dependency manifests or lockfiles were detected.
-
-Dependency files present in repository (inventory only):
-
+Dependency-related files changed on this branch:
 - `Cargo.toml`
 - `Cargo.lock`
-- `package-lock.json`
-- `oauth-worker/package.json`
-- `oauth-worker/package-lock.json`
+- `components/oidc-ingress/Cargo.toml`
+- `components/oidc-provider-runtime/Cargo.toml`
+- `components/oidc-provider/Cargo.toml`
 - `examples/axum-app/Cargo.toml`
-- `apps/oauth-testharness/Cargo.toml`
-- `crates/greentic-oauth-broker/Cargo.toml`
-- `crates/greentic-oauth-client/Cargo.toml`
-- `crates/greentic-oauth-core/Cargo.toml`
-- `crates/greentic-oauth-host/Cargo.toml`
-- `crates/greentic-oauth-sdk/Cargo.toml`
+
+Findings:
+- No `git+` Rust dependencies detected in `Cargo.lock`.
+- No insecure npm lockfile/package resolved sources (`git+` or `http://`) detected.
+- PR dependency changes are version/workspace updates and new workspace crates; no vulnerability indicators were found from supplied alert sources.
 
 ## Remediation Actions
-
-- No Dependabot alerts to remediate.
-- No code scanning alerts to remediate.
-- No new PR dependency vulnerabilities detected.
-- No code or dependency updates were required or applied.
+- No code or dependency fixes were required.
+- No security remediation patches were applied.
 
 ## Outcome
-
-No security fixes were necessary for this run. Current alert set and PR vulnerability input are clean.
+No security vulnerabilities were identified from the provided alert inputs or PR vulnerability feed for this run.

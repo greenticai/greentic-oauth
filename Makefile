@@ -1,4 +1,4 @@
-.PHONY: build test run fmt fmt-check clippy lint check docker
+.PHONY: build test run fmt fmt-check clippy lint check docker oauth-oidc-generic-pack-build oauth-oidc-generic-pack-clean
 
 build:
 	cargo build --workspace
@@ -24,3 +24,9 @@ check: fmt-check clippy test
 
 docker:
 	@echo "docker target not yet implemented"
+
+oauth-oidc-generic-pack-build:
+	./scripts/build-oauth-oidc-generic-pack.sh
+
+oauth-oidc-generic-pack-clean:
+	./scripts/clean-oauth-oidc-generic-pack.sh

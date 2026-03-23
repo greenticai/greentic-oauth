@@ -1,0 +1,124 @@
+pack_id: oauth-oidc-generic
+version: 0.4.26
+kind: application
+publisher: Greentic
+description: "Executable OIDC provider with runtime + ingress components"
+
+components:
+- id: oidc-provider-runtime
+  version: 0.4.26
+  world: greentic:oidc-provider-runtime/oidc-provider-runtime@0.1.0
+  supports:
+  - http
+  profiles:
+    default: default
+    supported:
+    - default
+  capabilities:
+    wasi:
+      random: false
+      clocks: false
+    host:
+      http-client: true
+      secrets-store: true
+  wasm: components/oidc-provider-runtime/component.wasm
+
+- id: oidc-ingress
+  version: 0.4.26
+  world: greentic:oidc-ingress/callback@0.1.0
+  supports:
+  - http
+  profiles:
+    default: default
+    supported:
+    - default
+  capabilities:
+    wasi:
+      random: false
+      clocks: false
+    host:
+      http-client: false
+      secrets-store: false
+      state-store: false
+  wasm: components/oidc-ingress/component.wasm
+
+extensions:
+  greentic.ext.capabilities.v1:
+    kind: greentic.ext.capabilities.v1
+    version: 0.4.26
+    inline:
+      schema_version: 1
+      offers:
+      - offer_id: oauth-oidc-generic-exec-initiate-auth-v1
+        cap_id: greentic.cap.oauth.broker.v1
+        version: 0.4.26
+        provider:
+          component_ref: oidc-provider-runtime
+          op: authorize-url
+        priority: 100
+        requires_setup: false
+        applies_to:
+          op_names:
+          - oauth.initiate_auth
+      - offer_id: oauth-oidc-generic-exec-get-access-token-v1
+        cap_id: greentic.cap.oauth.broker.v1
+        version: 0.4.26
+        provider:
+          component_ref: oidc-provider-runtime
+          op: exchange-code
+        priority: 110
+        requires_setup: false
+        applies_to:
+          op_names:
+          - oauth.get_access_token
+      - offer_id: oauth-oidc-generic-exec-request-resource-token-v1
+        cap_id: greentic.cap.oauth.broker.v1
+        version: 0.4.26
+        provider:
+          component_ref: oidc-provider-runtime
+          op: refresh-token
+        priority: 120
+        requires_setup: false
+        applies_to:
+          op_names:
+          - oauth.request_resource_token
+
+  greentic.provider-extension.v1:
+    kind: greentic.provider-extension.v1
+    version: 0.4.26
+    inline:
+      providers:
+      - provider_type: oauth.oidc.generic.executable
+        capabilities:
+        - oauth
+        ops:
+        - authorize-url
+        - exchange-code
+        - refresh-token
+        - ingest_http
+        config_schema_ref: schemas/oauth/oidc/public.config.schema.json
+        runtime:
+          component_ref: oidc-provider-runtime
+          export: schema-core-api
+          world: greentic:provider/schema-core@1.0.0
+
+  oauth.provider_ingress.v1:
+    kind: oauth.provider_ingress.v1
+    version: 0.4.26
+    inline:
+      capabilities:
+        content_types:
+        - application/x-www-form-urlencoded
+        supports_callback_validation: true
+      component_ref: oidc-ingress
+      export: handle-callback
+      world: greentic:oidc-ingress/callback@0.1.0
+
+  oauth.provider_flow_hints.v1:
+    kind: oauth.provider_flow_hints.v1
+    version: 0.4.26
+    inline:
+      oauth.oidc.generic.executable:
+        default: authorize-url
+        callback: exchange-code
+        refresh: refresh-token

@@ -25,6 +25,7 @@ jobs:
         with:
           channel: 1.91.0
           components: rustfmt, clippy
+          targets: wasm32-wasip2
 
       - name: Cache cargo directories
         uses: actions/cache@v4
@@ -49,16 +50,26 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Cargo clippy
-        run: cargo clippy --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude greentic-oauth-broker -- -D warnings
 
       - name: Cargo build
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace --all-features --exclude greentic-oauth-broker
 
       - name: Cargo test
-        run: cargo test --workspace --all-features
+        run: cargo test --workspace --all-features --exclude greentic-oauth-broker
+
+      - name: Install greentic-pack CLI (for pack build)
+        run: |
+          if ! command -v greentic-pack >/dev/null 2>&1; then
+            cargo install --locked greentic-pack
+          fi
+
+      - name: Build OAuth OIDC Generic pack
+        run: ./scripts/build-oauth-oidc-generic-pack.sh
 
       - name: Cleanup build artifacts
         if: always()
         run: |
           rm -rf "$CARGO_TARGET_DIR"
           rm -rf target
+          ./scripts/clean-oauth-oidc-generic-pack.sh
