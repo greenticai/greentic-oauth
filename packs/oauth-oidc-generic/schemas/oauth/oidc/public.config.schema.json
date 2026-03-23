@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OIDC Executable Provider Config",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider_id",
+    "auth_url",
+    "token_url",
+    "client_id_key",
+    "client_secret_key",
+    "public_base_url"
+  ],
+  "properties": {
+    "provider_id": { "type": "string" },
+    "auth_url": { "type": "string" },
+    "token_url": { "type": "string" },
+    "client_id": { "type": ["string", "null"] },
+    "client_secret": { "type": ["string", "null"] },
+    "client_id_key": { "type": "string" },
+    "client_secret_key": { "type": "string" },
+    "public_base_url": { "type": "string" },
+    "default_scopes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
