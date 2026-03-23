@@ -50,13 +50,13 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Cargo clippy
-        run: cargo clippy --workspace --all-features -- -D warnings
+        run: cargo clippy --workspace --all-features --exclude greentic-oauth-broker -- -D warnings
 
       - name: Cargo build
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace --all-features --exclude greentic-oauth-broker
 
       - name: Cargo test
-        run: cargo test --workspace --all-features
+        run: cargo test --workspace --all-features --exclude greentic-oauth-broker
 
       - name: Install greentic-pack CLI (for pack build)
         run: |

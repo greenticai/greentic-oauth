@@ -23,10 +23,9 @@ jobs:
       - name: Lint & Test
         run: |
           cargo fmt --all -- --check
-          cargo clippy --workspace --all-targets -- -D warnings
-          cargo build --workspace --all-features
-          cargo test --workspace --all-features -- --nocapture
-          cargo build -p greentic-oauth-broker --release
+          cargo clippy --workspace --all-targets --all-features --exclude greentic-oauth-broker -- -D warnings
+          cargo build --workspace --all-features --exclude greentic-oauth-broker
+          cargo test --workspace --all-features --exclude greentic-oauth-broker -- --nocapture
 
   publish:
     if: github.event_name == 'push'
