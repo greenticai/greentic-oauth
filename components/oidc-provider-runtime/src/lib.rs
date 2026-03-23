@@ -709,9 +709,9 @@ mod tests {
             RuntimeEnvelope {
                 op: "ingest_http".into(),
                 input: json!({
-                    "provider": "oauth-oidc-executable",
+                    "provider": "oauth-oidc",
                     "method": "GET",
-                    "path": "/v1/oauth/ingress/oauth-oidc-executable/acme/default",
+                    "path": "/v1/oauth/ingress/oauth-oidc/acme/default",
                     "query": [["code", "code-1"], ["state", "state-1"]]
                 }),
             },

@@ -2,10 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PACK_DIR="${ROOT_DIR}/packs/oidc-executable"
+PACK_DIR="${ROOT_DIR}/packs/oauth-oidc"
 OUT_DIR="${ROOT_DIR}/dist/packs"
-GT_OUT="${OUT_DIR}/oauth-oidc-executable.gtpack"
+GT_OUT="${OUT_DIR}/oauth-oidc.gtpack"
 TARGET_DIR="${CARGO_TARGET_DIR:-${ROOT_DIR}/target}"
+PACK_MANIFEST="${PACK_DIR}/pack.yaml"
+PACK_SCHEMA="${PACK_DIR}/schemas/oauth/oidc/public.config.schema.json"
 
 ensure_wasm_target() {
   if rustup target list --installed | grep -qx "wasm32-wasip2"; then
@@ -24,6 +26,18 @@ ensure_wasm_target() {
 }
 
 ensure_wasm_target
+
+if [[ ! -f "${PACK_MANIFEST}" ]]; then
+  echo "missing pack manifest: ${PACK_MANIFEST}" >&2
+  echo "ensure packs/oauth-oidc/pack.yaml is committed to the repository" >&2
+  exit 1
+fi
+
+if [[ ! -f "${PACK_SCHEMA}" ]]; then
+  echo "missing config schema: ${PACK_SCHEMA}" >&2
+  echo "ensure packs/oauth-oidc/schemas/oauth/oidc/public.config.schema.json is committed" >&2
+  exit 1
+fi
 
 echo "==> Building OIDC executable components (wasm32-wasip2)"
 cargo build --release -p oidc-provider-runtime --target wasm32-wasip2
