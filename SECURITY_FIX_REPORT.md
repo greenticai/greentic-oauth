@@ -1,41 +1,30 @@
-# SECURITY_FIX_REPORT
+# Security Fix Report
 
 Date: 2026-03-23 (UTC)
 Role: Security Reviewer (CI)
 
-## Inputs
-- Dependabot alerts: `[]`
-- Code scanning alerts: `[]`
+## Inputs Reviewed
+- Security alerts JSON:
+  - `dependabot`: `[]`
+  - `code_scanning`: `[]`
 - New PR dependency vulnerabilities: `[]`
 
-## Analysis Summary
-- Reviewed provided security alerts payload from `security-alerts.json`: no Dependabot or code-scanning findings.
-- Reviewed provided PR vulnerability payload from `pr-vulnerable-changes.json`: no new dependency vulnerabilities.
-- Performed PR dependency-file review against `origin/master...HEAD`.
+## PR Dependency Change Review
+Checked the current repository diff for dependency manifests and lockfiles, including:
+- Rust: `Cargo.toml`, `Cargo.lock`
+- Node.js: `package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+- Python/Go common dependency files
 
-## PR Dependency Review
-Commands run:
-- `git diff --name-only origin/master...HEAD`
-- `git diff --name-only origin/master...HEAD -- 'Cargo.toml' 'Cargo.lock' '**/Cargo.toml' '**/Cargo.lock' 'package.json' 'package-lock.json' '**/package.json' '**/package-lock.json'`
-- `rg -n 'source = "git\+' Cargo.lock`
-- `rg -n '"resolved"\s*:\s*"(git\+|http://)' package-lock.json oauth-worker/package-lock.json oauth-worker/package.json`
+Result:
+- No dependency files are modified in the current PR diff.
+- Therefore, no new dependency vulnerability is introduced by dependency-file changes in this PR.
 
-Dependency-related files changed on this branch:
-- `Cargo.toml`
-- `Cargo.lock`
-- `components/oidc-ingress/Cargo.toml`
-- `components/oidc-provider-runtime/Cargo.toml`
-- `components/oidc-provider/Cargo.toml`
-- `examples/axum-app/Cargo.toml`
+## Remediation Actions Taken
+- No remediation changes were necessary because there are no reported vulnerabilities and no vulnerable dependency changes introduced by this PR.
+- Repository code and dependency files were left unchanged.
 
-Findings:
-- No `git+` Rust dependencies detected in `Cargo.lock`.
-- No insecure npm lockfile/package resolved sources (`git+` or `http://`) detected.
-- PR dependency changes are version/workspace updates and new workspace crates; no vulnerability indicators were found from supplied alert sources.
+## Files Changed
+- Updated `SECURITY_FIX_REPORT.md`.
 
-## Remediation Actions
-- No code or dependency fixes were required.
-- No security remediation patches were applied.
-
-## Outcome
-No security vulnerabilities were identified from the provided alert inputs or PR vulnerability feed for this run.
+## Conclusion
+No security fixes were required for this CI run based on the provided alerts and PR dependency vulnerability data.
