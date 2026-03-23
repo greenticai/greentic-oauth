@@ -464,7 +464,7 @@ Crate versions are taken directly from each `Cargo.toml`. When you push to `mast
 
 - If a crate’s manifest changed and no tag exists yet, a tag `<crate-name>-v<semver>` is created and pushed automatically.
 - The publish workflow runs after lint/build/test, using `katyo/publish-crates@v2` to publish every crate whose version bumped. The step is idempotent and succeeds even when a version is already on crates.io.
-- The same publish workflow also builds `dist/packs/oauth-oidc.gtpack` and publishes it to GHCR as `ghcr.io/<owner>/oauth-oidc-pack` (tagged by commit SHA, plus `latest` on `master` and the Git tag name on tagged releases).
+- The same publish workflow also builds `dist/packs/oauth-oidc-generic.gtpack` and publishes it to GHCR as `ghcr.io/<owner>/oauth-oidc-generic-pack` (tagged by commit SHA, plus `latest` on `master` and the Git tag name on tagged releases).
 - For single-crate repos the tag format collapses to `<repo-name>-v<semver>`, matching the crate name.
 
 Trigger the workflow manually via “Run workflow” if you need to republish; an existing version simply results in a no-op.

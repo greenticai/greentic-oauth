@@ -2,9 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PACK_DIR="${ROOT_DIR}/packs/oauth-oidc"
+PACK_DIR="${ROOT_DIR}/packs/oauth-oidc-generic"
 OUT_DIR="${ROOT_DIR}/dist/packs"
-GT_OUT="${OUT_DIR}/oauth-oidc.gtpack"
+GT_OUT="${OUT_DIR}/oauth-oidc-generic.gtpack"
 TARGET_DIR="${CARGO_TARGET_DIR:-${ROOT_DIR}/target}"
 PACK_MANIFEST="${PACK_DIR}/pack.yaml"
 PACK_SCHEMA="${PACK_DIR}/schemas/oauth/oidc/public.config.schema.json"
@@ -29,13 +29,13 @@ ensure_wasm_target
 
 if [[ ! -f "${PACK_MANIFEST}" ]]; then
   echo "missing pack manifest: ${PACK_MANIFEST}" >&2
-  echo "ensure packs/oauth-oidc/pack.yaml is committed to the repository" >&2
+  echo "ensure packs/oauth-oidc-generic/pack.yaml is committed to the repository" >&2
   exit 1
 fi
 
 if [[ ! -f "${PACK_SCHEMA}" ]]; then
   echo "missing config schema: ${PACK_SCHEMA}" >&2
-  echo "ensure packs/oauth-oidc/schemas/oauth/oidc/public.config.schema.json is committed" >&2
+  echo "ensure packs/oauth-oidc-generic/schemas/oauth/oidc/public.config.schema.json is committed" >&2
   exit 1
 fi
 

@@ -50,7 +50,7 @@ jobs:
           check-repo: true
           dry-run: false
 
-  publish-oauth-oidc-pack:
+  publish-oauth-oidc-generic-pack:
     if: github.event_name == 'push'
     needs: build-test
     runs-on: ubuntu-latest
@@ -76,16 +76,16 @@ jobs:
       - name: Install oras
         uses: oras-project/setup-oras@v1
 
-      - name: Build OAuth OIDC pack
-        run: ./scripts/build-oauth-oidc-pack.sh
+      - name: Build OAuth OIDC Generic pack
+        run: ./scripts/build-oauth-oidc-generic-pack.sh
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Publish OAuth OIDC pack to GHCR
+      - name: Publish OAuth OIDC Generic pack to GHCR
         env:
-          PACK_REPO: ghcr.io/${{ github.repository_owner }}/oauth-oidc-pack
-          PACK_FILE: dist/packs/oauth-oidc.gtpack
+          PACK_REPO: ghcr.io/${{ github.repository_owner }}/oauth-oidc-generic-pack
+          PACK_FILE: dist/packs/oauth-oidc-generic.gtpack
         run: |
           oras push "${PACK_REPO}:${GITHUB_SHA}" \
             --artifact-type application/vnd.greentic.gtpack.v1+binary \
@@ -101,4 +101,4 @@ jobs:
 
       - name: Cleanup pack artifacts
         if: always()
-        run: ./scripts/clean-oauth-oidc-pack.sh
+        run: ./scripts/clean-oauth-oidc-generic-pack.sh
