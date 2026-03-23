@@ -1,37 +1,52 @@
 # Security Fix Report
 
-## Summary
-- Reviewed provided security alert payloads.
-- Checked PR-introduced dependency vulnerability feed.
-- Inspected dependency file changes in this branch.
-- Applied minimal safe remediation where needed.
+Date: 2026-03-23 (UTC)
+Role: Security Reviewer (CI)
 
 ## Inputs Reviewed
-- `security-alerts.json`: `{"dependabot": [], "code_scanning": []}`
-- Dependabot alerts provided: `0`
-- Code scanning alerts provided: `0`
-- New PR dependency vulnerabilities provided: `0`
 
-## Dependency Change Review (PR Scope)
-Compared branch changes against `origin/master` for common manifest/lockfiles. Changed dependency files include:
+- Security alerts JSON:
+  - `dependabot`: `[]`
+  - `code_scanning`: `[]`
+- New PR dependency vulnerabilities: `[]`
+- Local artifacts:
+  - `security-alerts.json`
+  - `dependabot-alerts.json`
+  - `code-scanning-alerts.json`
+  - `pr-vulnerable-changes.json`
+
+## PR Dependency Change Check
+
+Checked for dependency-file changes in this PR context using:
+
+- `git diff --name-only`
+- `git diff --name-only --cached`
+- Untracked dependency files via `git ls-files --others --exclude-standard`
+
+Result: No changed dependency manifests or lockfiles were detected.
+
+Dependency files present in repository (inventory only):
+
 - `Cargo.toml`
 - `Cargo.lock`
-- `components/oidc-provider/Cargo.toml`
-- `components/oidc-provider-runtime/Cargo.toml`
-- `components/oidc-ingress/Cargo.toml`
-
-No newly introduced PR dependency vulnerabilities were reported in `pr-vulnerable-changes.json` (`[]`).
-
-## Additional Validation
-- Ran `npm audit --omit=dev --json` in `oauth-worker/`.
-- Result: `0` vulnerabilities (`info/low/moderate/high/critical = 0`).
-- Attempted `cargo audit -q`, but execution was blocked by CI filesystem restrictions:
-  - Rustup could not create temp files under read-only `~/.rustup`.
+- `package-lock.json`
+- `oauth-worker/package.json`
+- `oauth-worker/package-lock.json`
+- `examples/axum-app/Cargo.toml`
+- `apps/oauth-testharness/Cargo.toml`
+- `crates/greentic-oauth-broker/Cargo.toml`
+- `crates/greentic-oauth-client/Cargo.toml`
+- `crates/greentic-oauth-core/Cargo.toml`
+- `crates/greentic-oauth-host/Cargo.toml`
+- `crates/greentic-oauth-sdk/Cargo.toml`
 
 ## Remediation Actions
-- No actionable vulnerabilities were found from provided alerts or PR vulnerability feed.
-- No source or dependency changes were required for remediation.
+
+- No Dependabot alerts to remediate.
+- No code scanning alerts to remediate.
+- No new PR dependency vulnerabilities detected.
+- No code or dependency updates were required or applied.
 
 ## Outcome
-- Security review completed.
-- Repository is clear for this CI security gate based on available alert data and successful npm audit results.
+
+No security fixes were necessary for this run. Current alert set and PR vulnerability input are clean.
