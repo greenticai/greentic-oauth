@@ -91,7 +91,7 @@ jobs:
             --artifact-type application/vnd.greentic.gtpack.v1+binary \
             "${PACK_FILE}:application/vnd.greentic.gtpack.layer.v1+binary"
 
-          if [[ "${GITHUB_REF_NAME}" == "master" ]]; then
+          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             oras tag "${PACK_REPO}:${GITHUB_SHA}" latest
           fi
 
