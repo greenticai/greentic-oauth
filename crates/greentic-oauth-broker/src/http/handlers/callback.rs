@@ -551,7 +551,8 @@ where
     record_callback_success(&flow_state.provider, latency_ms, status);
 
     let response = if let Some(target) = redirect_target {
-        Redirect::temporary(&target).into_response()
+        let redirect_url = append_auth_params(&target, secret_path.as_str(), &flow_state.flow_id);
+        Redirect::temporary(&redirect_url).into_response()
     } else {
         (StatusCode::OK, "ok").into_response()
     };
@@ -565,6 +566,25 @@ fn build_audit_attrs<'a>(flow_state: &'a FlowState) -> AuditAttributes<'a> {
         tenant: &flow_state.tenant,
         team: flow_state.team.as_deref(),
         provider: &flow_state.provider,
+    }
+}
+
+/// Append `token_handle` and `flow_id` query parameters to the redirect URI
+/// so the client SPA can detect auth completion and exchange the handle for tokens.
+fn append_auth_params(base_uri: &str, token_handle: &str, flow_id: &str) -> String {
+    match url::Url::parse(base_uri) {
+        Ok(mut parsed) => {
+            parsed
+                .query_pairs_mut()
+                .append_pair("token_handle", token_handle)
+                .append_pair("flow_id", flow_id);
+            parsed.to_string()
+        }
+        Err(_) => {
+            // Fallback: append as raw query string
+            let separator = if base_uri.contains('?') { '&' } else { '?' };
+            format!("{base_uri}{separator}token_handle={token_handle}&flow_id={flow_id}")
+        }
     }
 }
 
