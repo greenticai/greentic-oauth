@@ -1,26 +1,33 @@
 # Security Fix Report
 
 Date: 2026-03-27 (UTC)
-Branch: `chore/use-reusable-auto-tag`
+Branch: `chore/sync-toolchain`
 
 ## Inputs Reviewed
 - Dependabot/code scanning alerts JSON: `{"dependabot": [], "code_scanning": []}`
 - New PR dependency vulnerabilities JSON: `[]`
 
 ## PR Dependency Change Review
-- Latest commit changed file:
-  - `.github/workflows/auto-tag.yml`
+- Files changed in latest PR commit:
+  - `rust-toolchain.toml`
+  - `rustfmt.toml`
 - Dependency manifests/lockfiles changed in this PR context: **None detected**
+  - Checked: `Cargo.toml`, `Cargo.lock`, `package.json`, `package-lock.json`, and nested workspace equivalents.
 
 ## Security Findings
 - Dependabot alerts: **None**
 - Code scanning alerts: **None**
 - New PR dependency vulnerabilities: **None**
+- Newly introduced dependency vulnerabilities in PR files: **None identified**
 
 ## Remediation Actions
 - No vulnerability remediation changes were required.
-- No dependency upgrades were applied because there were no actionable alerts.
+- No dependency updates were applied because there were no actionable vulnerabilities.
 
 ## Validation Notes
-- Reviewed alert input files: `security-alerts.json`, `dependabot-alerts.json`, `code-scanning-alerts.json`, `pr-vulnerable-changes.json`.
-- Enumerated repository dependency files (Rust + Node manifests/lockfiles) and checked PR-relevant changes for dependency impact.
+- Reviewed alert artifacts:
+  - `security-alerts.json`
+  - `dependabot-alerts.json`
+  - `code-scanning-alerts.json`
+  - `pr-vulnerable-changes.json`
+- Verified latest PR file changes do not modify dependency manifests or lockfiles.
