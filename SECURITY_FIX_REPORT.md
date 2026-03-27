@@ -1,27 +1,26 @@
 # Security Fix Report
 
 Date: 2026-03-27 (UTC)
-Branch: `chore/shared-codex-security-fix`
+Branch: `chore/use-reusable-auto-tag`
 
 ## Inputs Reviewed
-- Dependabot alerts JSON: `{"dependabot": [], "code_scanning": []}`
-- New PR dependency vulnerabilities: `[]`
+- Dependabot/code scanning alerts JSON: `{"dependabot": [], "code_scanning": []}`
+- New PR dependency vulnerabilities JSON: `[]`
 
 ## PR Dependency Change Review
-Compared `HEAD` against `origin/main`:
-- Changed files in PR:
-  - `.github/workflows/codex-security-fix.yml`
-- Dependency manifests/lockfiles changed in this PR: **None**
+- Latest commit changed file:
+  - `.github/workflows/auto-tag.yml`
+- Dependency manifests/lockfiles changed in this PR context: **None detected**
 
 ## Security Findings
 - Dependabot alerts: **None**
 - Code scanning alerts: **None**
-- Newly introduced PR dependency vulnerabilities: **None**
+- New PR dependency vulnerabilities: **None**
 
 ## Remediation Actions
-- No code or dependency fixes were required because no actionable vulnerabilities were present.
+- No vulnerability remediation changes were required.
+- No dependency upgrades were applied because there were no actionable alerts.
 
 ## Validation Notes
-- Repository was checked for dependency manifest and lock files (Node + Rust present).
-- PR diff was inspected to verify no dependency file changes were introduced.
-
+- Reviewed alert input files: `security-alerts.json`, `dependabot-alerts.json`, `code-scanning-alerts.json`, `pr-vulnerable-changes.json`.
+- Enumerated repository dependency files (Rust + Node manifests/lockfiles) and checked PR-relevant changes for dependency impact.
