@@ -1,7 +1,7 @@
 # Security Fix Report
 
-Date: 2026-03-27 (UTC)
-Branch: `chore/sync-toolchain`
+Date: 2026-03-30 (UTC)
+Branch: `feat/codeql`
 
 ## Inputs Reviewed
 - Dependabot/code scanning alerts JSON: `{"dependabot": [], "code_scanning": []}`
@@ -9,8 +9,7 @@ Branch: `chore/sync-toolchain`
 
 ## PR Dependency Change Review
 - Files changed in latest PR commit:
-  - `rust-toolchain.toml`
-  - `rustfmt.toml`
+  - `.github/workflows/codeql.yml`
 - Dependency manifests/lockfiles changed in this PR context: **None detected**
   - Checked: `Cargo.toml`, `Cargo.lock`, `package.json`, `package-lock.json`, and nested workspace equivalents.
 
@@ -31,3 +30,4 @@ Branch: `chore/sync-toolchain`
   - `code-scanning-alerts.json`
   - `pr-vulnerable-changes.json`
 - Verified latest PR file changes do not modify dependency manifests or lockfiles.
+- Confirmed working tree dependency files are unchanged for this review run.
