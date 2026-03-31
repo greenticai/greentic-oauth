@@ -1,33 +1,32 @@
 # Security Fix Report
 
-Date: 2026-03-30 (UTC)
-Branch: `feat/codeql`
+Date: 2026-03-31 (UTC)
+Branch: `ci/enable-semver-checks`
 
 ## Inputs Reviewed
 - Dependabot/code scanning alerts JSON: `{"dependabot": [], "code_scanning": []}`
 - New PR dependency vulnerabilities JSON: `[]`
 
 ## PR Dependency Change Review
-- Files changed in latest PR commit:
-  - `.github/workflows/codeql.yml`
+- Files changed in this PR context:
+  - `.github/workflows/ci.yml`
 - Dependency manifests/lockfiles changed in this PR context: **None detected**
-  - Checked: `Cargo.toml`, `Cargo.lock`, `package.json`, `package-lock.json`, and nested workspace equivalents.
 
 ## Security Findings
 - Dependabot alerts: **None**
 - Code scanning alerts: **None**
 - New PR dependency vulnerabilities: **None**
-- Newly introduced dependency vulnerabilities in PR files: **None identified**
+- Newly introduced dependency vulnerabilities in PR dependency files: **None identified**
 
 ## Remediation Actions
-- No vulnerability remediation changes were required.
-- No dependency updates were applied because there were no actionable vulnerabilities.
+- No remediation code changes were required.
+- No dependency upgrades were applied because there were no actionable vulnerabilities.
 
 ## Validation Notes
-- Reviewed alert artifacts:
+- Reviewed:
   - `security-alerts.json`
   - `dependabot-alerts.json`
   - `code-scanning-alerts.json`
   - `pr-vulnerable-changes.json`
-- Verified latest PR file changes do not modify dependency manifests or lockfiles.
-- Confirmed working tree dependency files are unchanged for this review run.
+  - `pr-changed-files.txt`
+- Confirmed the PR change set does not modify dependency manifests or lockfiles.
