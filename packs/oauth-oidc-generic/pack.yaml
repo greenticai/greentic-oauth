@@ -42,6 +42,11 @@ components:
       state-store: false
   wasm: components/oidc-ingress/component.wasm
 
+dependencies: []
+flows: []
+assets:
+- path: assets/setup.yaml
+
 extensions:
   greentic.ext.capabilities.v1:
     kind: greentic.ext.capabilities.v1

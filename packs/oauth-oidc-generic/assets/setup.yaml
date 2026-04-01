@@ -1,0 +1,85 @@
+provider_id: oauth-oidc-generic
+version: 1
+title: OAuth OIDC Provider Setup
+questions:
+  - name: provider_id
+    title: Provider ID
+    kind: string
+    required: true
+    help: "Unique identifier for this OAuth provider (e.g. github, google, microsoft)"
+    placeholder: "github"
+    group: Provider
+
+  - name: auth_url
+    title: Authorization URL
+    kind: string
+    required: true
+    help: "OAuth authorization endpoint"
+    placeholder: "https://github.com/login/oauth/authorize"
+    group: Provider
+    validate:
+      regex: "^https://"
+
+  - name: token_url
+    title: Token URL
+    kind: string
+    required: true
+    help: "OAuth token exchange endpoint"
+    placeholder: "https://github.com/login/oauth/access_token"
+    group: Provider
+    validate:
+      regex: "^https://"
+
+  - name: public_base_url
+    title: Public base URL
+    kind: string
+    required: true
+    help: "Public-facing URL for OAuth callback (auto-replaced by gtc start when using tunnel)"
+    placeholder: "https://xxxx.trycloudflare.com"
+    group: Connection
+    validate:
+      regex: "^https?://"
+
+  - name: client_id
+    title: Client ID
+    kind: string
+    required: true
+    help: "OAuth application client ID"
+    placeholder: "Iv1.xxxxxxxxxxxxxxxx"
+    group: Authentication
+    docs_url: "https://github.com/settings/developers"
+
+  - name: client_secret
+    title: Client Secret
+    kind: string
+    required: true
+    secret: true
+    help: "OAuth application client secret"
+    group: Authentication
+
+  - name: client_id_key
+    title: Client ID secret key
+    kind: string
+    required: true
+    default: "OAUTH_CLIENT_ID"
+    help: "Secret store key name for the client ID"
+    placeholder: "OAUTH_CLIENT_ID"
+    group: Secrets
+
+  - name: client_secret_key
+    title: Client Secret secret key
+    kind: string
+    required: true
+    default: "OAUTH_CLIENT_SECRET"
+    help: "Secret store key name for the client secret"
+    placeholder: "OAUTH_CLIENT_SECRET"
+    group: Secrets
+
+  - name: default_scopes
+    title: Default scopes
+    kind: string
+    required: false
+    default: "openid profile email"
+    help: "Space-separated OAuth scopes to request"
+    placeholder: "repo read:user user:email"
+    group: Provider
