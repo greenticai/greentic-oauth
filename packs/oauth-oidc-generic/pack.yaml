@@ -1,12 +1,12 @@
 pack_id: oauth-oidc-generic
-version: 0.4.26
+version: 0.4.28
 kind: application
 publisher: Greentic
 description: "Executable OIDC provider with runtime + ingress components"
 
 components:
 - id: oidc-provider-runtime
-  version: 0.4.26
+  version: 0.4.28
   world: greentic:oidc-provider-runtime/oidc-provider-runtime@0.1.0
   supports:
   - http
@@ -24,7 +24,7 @@ components:
   wasm: components/oidc-provider-runtime/component.wasm
 
 - id: oidc-ingress
-  version: 0.4.26
+  version: 0.4.28
   world: greentic:oidc-ingress/callback@0.1.0
   supports:
   - http
@@ -42,16 +42,21 @@ components:
       state-store: false
   wasm: components/oidc-ingress/component.wasm
 
+dependencies: []
+flows: []
+assets:
+- path: assets/setup.yaml
+
 extensions:
   greentic.ext.capabilities.v1:
     kind: greentic.ext.capabilities.v1
-    version: 0.4.26
+    version: 0.4.28
     inline:
       schema_version: 1
       offers:
       - offer_id: oauth-oidc-generic-exec-initiate-auth-v1
         cap_id: greentic.cap.oauth.broker.v1
-        version: 0.4.26
+        version: 0.4.28
         provider:
           component_ref: oidc-provider-runtime
           op: authorize-url
@@ -62,7 +67,7 @@ extensions:
           - oauth.initiate_auth
       - offer_id: oauth-oidc-generic-exec-get-access-token-v1
         cap_id: greentic.cap.oauth.broker.v1
-        version: 0.4.26
+        version: 0.4.28
         provider:
           component_ref: oidc-provider-runtime
           op: exchange-code
@@ -73,7 +78,7 @@ extensions:
           - oauth.get_access_token
       - offer_id: oauth-oidc-generic-exec-request-resource-token-v1
         cap_id: greentic.cap.oauth.broker.v1
-        version: 0.4.26
+        version: 0.4.28
         provider:
           component_ref: oidc-provider-runtime
           op: refresh-token
@@ -85,7 +90,7 @@ extensions:
 
   greentic.provider-extension.v1:
     kind: greentic.provider-extension.v1
-    version: 0.4.26
+    version: 0.4.28
     inline:
       providers:
       - provider_type: oauth.oidc.generic.executable
@@ -104,7 +109,7 @@ extensions:
 
   oauth.provider_ingress.v1:
     kind: oauth.provider_ingress.v1
-    version: 0.4.26
+    version: 0.4.28
     inline:
       capabilities:
         content_types:
@@ -116,7 +121,7 @@ extensions:
 
   oauth.provider_flow_hints.v1:
     kind: oauth.provider_flow_hints.v1
-    version: 0.4.26
+    version: 0.4.28
     inline:
       oauth.oidc.generic.executable:
         default: authorize-url
