@@ -9,10 +9,21 @@ Reviewer: CI Security Reviewer
 - New PR dependency vulnerabilities: `0`
 
 ## PR Dependency Change Review
-Checked changed files in this branch/PR diff:
+Checked provided PR changed-file list:
 - `.github/workflows/publish.yml`
+- `Cargo.toml`
+- `Cargo.lock`
+- `all-code-scanning-alerts.json`
+- `packs/oauth-oidc-generic/assets/setup.yaml`
+- `packs/oauth-oidc-generic/pack.yaml`
 
-No dependency manifests or lockfiles were changed in this PR.
+Dependency files reviewed:
+- `Cargo.toml`
+- `Cargo.lock`
+
+Result:
+- No newly introduced dependency vulnerabilities were reported (`[]`).
+- No vulnerable dependency additions were identified from the supplied PR vulnerability input.
 
 ## Vulnerability Assessment
 - No Dependabot vulnerabilities to remediate.
@@ -21,7 +32,7 @@ No dependency manifests or lockfiles were changed in this PR.
 
 ## Remediation Actions
 - No code or dependency fixes were required.
-- Added this report file to document the completed security review.
+- Updated this report to document the completed security review for the current CI run.
 
 ## Final Status
 `PASS` - No actionable security findings for this PR based on provided alerts and dependency diff review.

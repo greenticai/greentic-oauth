@@ -12,6 +12,7 @@ node_modules/
 /npm-debug.log*
 /yarn-error.log*
 
+temp_auto_push.bat
 # Environment files
 .env
 .env.*
@@ -27,3 +28,5 @@ Thumbs.db
 # Docker
 *.pid
 docker-compose.override.yml
+.gitignore
+branch_structure.json

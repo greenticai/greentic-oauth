@@ -1,1 +1,9 @@
 .github/workflows/publish.yml
+Cargo.lock
+Cargo.toml
+SECURITY_FIX_REPORT.md
+all-code-scanning-alerts.json
+packs/oauth-oidc-generic/assets/setup.yaml
+packs/oauth-oidc-generic/pack.yaml
+pr-changed-files.txt
+pr-comment.md
