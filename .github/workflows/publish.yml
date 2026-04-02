@@ -15,35 +15,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          channel: 1.91.0
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - name: Lint & Test
-        run: |
-          cargo fmt --all -- --check
-          cargo clippy --workspace --all-targets --all-features --exclude greentic-oauth-broker -- -D warnings
-          cargo build --workspace --all-features --exclude greentic-oauth-broker
-          cargo test --workspace --all-features --exclude greentic-oauth-broker -- --nocapture
+  ci:
+    uses: ./.github/workflows/ci.yml
 
   publish:
     if: github.event_name == 'push'
-    needs: build-test
+    needs: ci
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          channel: 1.91.0
-          components: rustfmt, clippy
+          toolchain: 1.91.0
       - uses: Swatinem/rust-cache@v2
       - name: Publish changed crates
         uses: katyo/publish-crates@v2
@@ -56,7 +42,7 @@ jobs:
 
   publish-oauth-oidc-generic-pack:
     if: github.event_name == 'push'
-    needs: build-test
+    needs: ci
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -64,9 +50,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          channel: 1.91.0
+          toolchain: 1.91.0
           targets: wasm32-wasip2
 
       - uses: Swatinem/rust-cache@v2
