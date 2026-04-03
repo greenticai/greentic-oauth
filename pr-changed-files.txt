@@ -1,8 +1,0 @@
-Cargo.lock
-Cargo.toml
-components/oauth-card/Cargo.toml
-components/oauth-card/src/lib.rs
-components/oidc-provider-runtime/Cargo.toml
-components/oidc-provider-runtime/src/extension_manifest.rs
-components/oidc-provider-runtime/src/lib.rs
-packs/oauth-oidc-generic/pack.yaml
