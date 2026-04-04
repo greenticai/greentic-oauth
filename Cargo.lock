@@ -1473,7 +1473,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-axum-example"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1583,7 +1583,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-broker"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -1635,7 +1635,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-client"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "reqwest 0.13.2",
  "serde",
@@ -1646,7 +1646,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-core"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1675,7 +1675,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-host"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "async-trait",
  "greentic-interfaces-host",
@@ -1690,7 +1690,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-sdk"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -2638,8 +2638,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "oauth-card"
+version = "0.4.29"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "oauth-testharness"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2693,7 +2702,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-ingress"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "serde",
  "serde_json",
@@ -2704,7 +2713,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-provider"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
  "greentic-interfaces-guest",
  "thiserror 2.0.18",
@@ -2713,8 +2722,9 @@ dependencies = [
 
 [[package]]
 name = "oidc-provider-runtime"
-version = "0.4.28"
+version = "0.4.29"
 dependencies = [
+ "oauth-card",
  "oidc-provider",
  "serde",
  "serde_json",

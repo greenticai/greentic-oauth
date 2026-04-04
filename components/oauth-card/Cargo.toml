@@ -1,0 +1,15 @@
+[package]
+name = "oauth-card"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+publish = false
+license = "MIT"
+description = "Generic OAuth card placeholder resolution logic, reusable across OAuth providers."
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

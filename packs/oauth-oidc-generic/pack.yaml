@@ -1,12 +1,12 @@
 pack_id: oauth-oidc-generic
-version: 0.4.28
+version: 0.4.29
 kind: application
 publisher: Greentic
 description: "Executable OIDC provider with runtime + ingress components"
 
 components:
 - id: oidc-provider-runtime
-  version: 0.4.28
+  version: 0.4.29
   world: greentic:oidc-provider-runtime/oidc-provider-runtime@0.1.0
   supports:
   - http
@@ -24,7 +24,7 @@ components:
   wasm: components/oidc-provider-runtime/component.wasm
 
 - id: oidc-ingress
-  version: 0.4.28
+  version: 0.4.29
   world: greentic:oidc-ingress/callback@0.1.0
   supports:
   - http
@@ -50,13 +50,13 @@ assets:
 extensions:
   greentic.ext.capabilities.v1:
     kind: greentic.ext.capabilities.v1
-    version: 0.4.28
+    version: 0.4.29
     inline:
       schema_version: 1
       offers:
       - offer_id: oauth-oidc-generic-exec-initiate-auth-v1
         cap_id: greentic.cap.oauth.broker.v1
-        version: 0.4.28
+        version: 0.4.29
         provider:
           component_ref: oidc-provider-runtime
           op: authorize-url
@@ -67,7 +67,7 @@ extensions:
           - oauth.initiate_auth
       - offer_id: oauth-oidc-generic-exec-get-access-token-v1
         cap_id: greentic.cap.oauth.broker.v1
-        version: 0.4.28
+        version: 0.4.29
         provider:
           component_ref: oidc-provider-runtime
           op: exchange-code
@@ -78,7 +78,7 @@ extensions:
           - oauth.get_access_token
       - offer_id: oauth-oidc-generic-exec-request-resource-token-v1
         cap_id: greentic.cap.oauth.broker.v1
-        version: 0.4.28
+        version: 0.4.29
         provider:
           component_ref: oidc-provider-runtime
           op: refresh-token
@@ -87,10 +87,21 @@ extensions:
         applies_to:
           op_names:
           - oauth.request_resource_token
+      - offer_id: oauth-oidc-generic-card-resolve-v1
+        cap_id: greentic.cap.oauth.card.v1
+        version: 0.4.29
+        provider:
+          component_ref: oidc-provider-runtime
+          op: resolve-card
+        priority: 100
+        requires_setup: false
+        applies_to:
+          op_names:
+          - oauth.card.resolve
 
   greentic.provider-extension.v1:
     kind: greentic.provider-extension.v1
-    version: 0.4.28
+    version: 0.4.29
     inline:
       providers:
       - provider_type: oauth.oidc.generic.executable
@@ -100,6 +111,7 @@ extensions:
         - authorize-url
         - exchange-code
         - refresh-token
+        - resolve-card
         - ingest_http
         config_schema_ref: schemas/oauth/oidc/public.config.schema.json
         runtime:
@@ -109,7 +121,7 @@ extensions:
 
   oauth.provider_ingress.v1:
     kind: oauth.provider_ingress.v1
-    version: 0.4.28
+    version: 0.4.29
     inline:
       capabilities:
         content_types:
@@ -121,7 +133,7 @@ extensions:
 
   oauth.provider_flow_hints.v1:
     kind: oauth.provider_flow_hints.v1
-    version: 0.4.28
+    version: 0.4.29
     inline:
       oauth.oidc.generic.executable:
         default: authorize-url
