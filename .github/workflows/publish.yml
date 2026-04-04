@@ -74,7 +74,7 @@ jobs:
 
       - name: Publish OAuth OIDC Generic pack to GHCR
         env:
-          PACK_REPO: ghcr.io/${{ github.repository_owner }}/packs/oauth/oauth-oidc-generic
+          PACK_REPO: ghcr.io/${{ github.repository_owner }}/oauth-oidc-generic-pack
           PACK_FILE: dist/packs/oauth-oidc-generic.gtpack
         run: |
           oras push "${PACK_REPO}:${GITHUB_SHA}" \
