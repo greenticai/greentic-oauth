@@ -10,6 +10,7 @@ license = "MIT"
 description = "Runtime operation adapter for OIDC extension provider components."
 
 [dependencies]
+oauth-card = { path = "../oauth-card" }
 oidc-provider = { path = "../oidc-provider", features = ["wit-http"] }
 serde.workspace = true
 serde_json.workspace = true

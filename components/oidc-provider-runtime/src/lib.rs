@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 pub mod extension_manifest;
 
+use oauth_card::CardResolveInput;
 use oidc_provider::{
     AuthorizeRequest, ExchangeCodeRequest, ExtensionOperation, ExtensionOperationResult,
     HostConfig, OidcComponent, OidcComponentError, OidcProviderConfig, RefreshRequest,
@@ -113,6 +114,9 @@ pub fn dispatch(
                 refresh_token: input.refresh_token,
                 scopes: input.scopes,
             }))?
+        }
+        "resolve-card" | "oauth.card.resolve" => {
+            return handle_resolve_card(component, envelope.input);
         }
         other => {
             return Err(RuntimeError::InvalidInput(format!(
@@ -290,6 +294,85 @@ fn token_error_message(status: u16, payload: &Value) -> String {
         return format!("token endpoint returned status {status}: {error}");
     }
     format!("token endpoint returned status {status}: {payload}")
+}
+
+fn handle_resolve_card(component: OidcComponent, input: Value) -> Result<Value, RuntimeError> {
+    let card_input: CardResolveDispatchInput =
+        serde_json::from_value(input).map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
+
+    let start_url = if let Some(url) = card_input.start_url.filter(|u| !u.trim().is_empty()) {
+        url
+    } else {
+        let tenant = card_input
+            .tenant
+            .filter(|v| !v.trim().is_empty())
+            .ok_or_else(|| {
+                RuntimeError::InvalidInput(
+                    "tenant is required when start_url is not provided".into(),
+                )
+            })?;
+        let state = card_input
+            .state
+            .filter(|v| !v.trim().is_empty())
+            .ok_or_else(|| {
+                RuntimeError::InvalidInput(
+                    "state is required when start_url is not provided (RFC 6749 CSRF protection)"
+                        .into(),
+                )
+            })?;
+        let code_challenge = card_input
+            .code_challenge
+            .filter(|v| !v.trim().is_empty())
+            .ok_or_else(|| {
+                RuntimeError::InvalidInput(
+                    "code_challenge is required when start_url is not provided (RFC 7636 PKCE)"
+                        .into(),
+                )
+            })?;
+        let authorize_req = AuthorizeRequest {
+            tenant,
+            state,
+            code_challenge,
+            scopes: card_input.scopes.unwrap_or_default(),
+            extra_auth_params: BTreeMap::new(),
+        };
+        let result =
+            component.execute_operation(ExtensionOperation::AuthorizeUrl(authorize_req))?;
+        match result {
+            ExtensionOperationResult::AuthorizeUrlBuilt { url, .. } => url,
+            _ => {
+                return Err(RuntimeError::InvalidInput(
+                    "unexpected result from authorize-url".into(),
+                ));
+            }
+        }
+    };
+
+    let native_oauth_card = card_input.native_oauth_card.unwrap_or(false);
+    let resolve_input = CardResolveInput {
+        adaptive_card: card_input.adaptive_card,
+        start_url: start_url.clone(),
+        teams_connection_name: card_input.teams_connection_name.clone(),
+        native_oauth_card,
+    };
+    let output = oauth_card::resolve_card(&resolve_input)
+        .map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
+
+    Ok(json!({
+        "ok": true,
+        "resolved_card": output.resolved_card,
+        "start_url": start_url,
+        "native_oauth_card": native_oauth_card,
+        "teams": {
+            "connectionName": card_input.teams_connection_name
+                .as_deref()
+                .filter(|v| !v.trim().is_empty())
+        },
+        "downgrade": output.downgrade.as_ref().map(|d| json!({
+            "mode": d.mode,
+            "reason": d.reason
+        }))
+    }))
 }
 
 fn handle_ingest_http(input: Value, default_provider_id: &str) -> Result<Value, RuntimeError> {
@@ -521,6 +604,25 @@ struct RefreshInput {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+struct CardResolveDispatchInput {
+    adaptive_card: String,
+    #[serde(default)]
+    start_url: Option<String>,
+    #[serde(default)]
+    tenant: Option<String>,
+    #[serde(default)]
+    state: Option<String>,
+    #[serde(default)]
+    code_challenge: Option<String>,
+    #[serde(default)]
+    scopes: Option<Vec<String>>,
+    #[serde(default)]
+    teams_connection_name: Option<String>,
+    #[serde(default)]
+    native_oauth_card: Option<bool>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 struct IngestHttpInput {
     #[serde(default)]
     provider: Option<String>,
@@ -549,8 +651,8 @@ impl bindings::exports::greentic::provider_schema_core::schema_core_api::Guest f
     fn describe() -> Vec<u8> {
         serde_json::to_vec(&json!({
             "provider_type": "oauth.oidc.generic.executable",
-            "capabilities": ["oauth"],
-            "ops": ["authorize-url", "exchange-code", "refresh-token", "ingest_http"]
+            "capabilities": ["oauth", "oauth-card"],
+            "ops": ["authorize-url", "exchange-code", "refresh-token", "resolve-card", "ingest_http"]
         }))
         .unwrap_or_default()
     }
@@ -698,6 +800,109 @@ mod tests {
         assert_eq!(
             output["http_request"]["url"],
             "https://issuer.example.com/oauth2/v1/token"
+        );
+    }
+
+    #[test]
+    fn dispatches_resolve_card_with_prebuilt_url() {
+        let output = dispatch(
+            host(),
+            provider(),
+            RuntimeEnvelope {
+                op: "resolve-card".into(),
+                input: json!({
+                    "adaptive_card": "{\"type\":\"AdaptiveCard\",\"actions\":[{\"type\":\"Action.OpenUrl\",\"title\":\"Connect\",\"url\":\"oauth://start\"}],\"connectionName\":\"{{oauth.teams.connectionName}}\"}",
+                    "start_url": "https://oauth.example/start/session",
+                    "teams_connection_name": "greentic-oauth",
+                    "native_oauth_card": true
+                }),
+            },
+        )
+        .expect("output");
+
+        assert_eq!(output["ok"], true);
+        assert_eq!(output["start_url"], "https://oauth.example/start/session");
+
+        let resolved: Value =
+            serde_json::from_str(output["resolved_card"].as_str().expect("resolved_card"))
+                .expect("card json");
+        assert_eq!(
+            resolved.pointer("/actions/0/url").and_then(Value::as_str),
+            Some("https://oauth.example/start/session")
+        );
+        assert_eq!(
+            resolved.get("connectionName").and_then(Value::as_str),
+            Some("greentic-oauth")
+        );
+        assert!(output["downgrade"].is_null());
+    }
+
+    #[test]
+    fn dispatches_resolve_card_generates_url() {
+        let output = dispatch(
+            host(),
+            provider(),
+            RuntimeEnvelope {
+                op: "oauth.card.resolve".into(),
+                input: json!({
+                    "adaptive_card": "{\"type\":\"AdaptiveCard\",\"actions\":[{\"type\":\"Action.OpenUrl\",\"url\":\"oauth://start\"}]}",
+                    "tenant": "acme",
+                    "state": "state-1",
+                    "code_challenge": "challenge-1"
+                }),
+            },
+        )
+        .expect("output");
+
+        assert_eq!(output["ok"], true);
+        let start_url = output["start_url"].as_str().expect("start_url");
+        assert!(start_url.contains("response_type=code"));
+
+        let resolved: Value =
+            serde_json::from_str(output["resolved_card"].as_str().expect("resolved_card"))
+                .expect("card json");
+        assert_eq!(
+            resolved.pointer("/actions/0/url").and_then(Value::as_str),
+            Some(start_url)
+        );
+    }
+
+    #[test]
+    fn resolve_card_rejects_missing_state_without_start_url() {
+        let result = dispatch(
+            host(),
+            provider(),
+            RuntimeEnvelope {
+                op: "resolve-card".into(),
+                input: json!({
+                    "adaptive_card": "{\"type\":\"AdaptiveCard\"}",
+                    "tenant": "acme",
+                    "code_challenge": "challenge-1"
+                }),
+            },
+        );
+        let err = result.expect_err("should fail without state");
+        assert!(err.to_string().contains("state is required"), "got: {err}");
+    }
+
+    #[test]
+    fn resolve_card_rejects_missing_code_challenge_without_start_url() {
+        let result = dispatch(
+            host(),
+            provider(),
+            RuntimeEnvelope {
+                op: "resolve-card".into(),
+                input: json!({
+                    "adaptive_card": "{\"type\":\"AdaptiveCard\"}",
+                    "tenant": "acme",
+                    "state": "state-1"
+                }),
+            },
+        );
+        let err = result.expect_err("should fail without code_challenge");
+        assert!(
+            err.to_string().contains("code_challenge is required"),
+            "got: {err}"
         );
     }
 

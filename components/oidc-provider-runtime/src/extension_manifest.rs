@@ -22,11 +22,12 @@ pub fn build_oidc_extension_manifest(input: OidcExtensionManifestInput<'_>) -> V
                 "providers": [
                     {
                         "provider_type": input.provider_type,
-                        "capabilities": ["oauth"],
+                        "capabilities": ["oauth", "oauth-card"],
                         "ops": [
                             "authorize-url",
                             "exchange-code",
                             "refresh-token",
+                            "resolve-card",
                             "ingest_http"
                         ],
                         "config_schema_ref": input.config_schema_ref,

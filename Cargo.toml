@@ -5,6 +5,7 @@ members = [
     "crates/greentic-oauth-host",
     "crates/greentic-oauth-sdk",
     "components/oidc-ingress",
+    "components/oauth-card",
     "components/oidc-provider",
     "components/oidc-provider-runtime",
     "examples/axum-app",
@@ -15,7 +16,7 @@ default-members = ["crates/greentic-oauth-broker"]
 resolver = "2"
 
 [workspace.package]
-version = "0.4.28"
+version = "0.4.29"
 edition = "2024"
 repository = "https://github.com/greenticai/greentic-oauth"
 homepage = "https://github.com/greenticai/greentic-oauth"
