@@ -87,5 +87,5 @@ http = "1"
 chrono = { version = "0.4", features = ["serde"] }
 toml = "0.9"
 serial_test = "3"
-wit-bindgen = "0.53"
+wit-bindgen = "0.54"
 
