@@ -78,8 +78,8 @@ jobs:
           PACK_FILE: dist/packs/oauth-oidc-generic.gtpack
         run: |
           oras push "${PACK_REPO}:${GITHUB_SHA}" \
-            --artifact-type application/vnd.greentic.gtpack.v1+binary \
-            "${PACK_FILE}:application/vnd.greentic.gtpack.layer.v1+binary"
+            --artifact-type application/vnd.greentic.gtpack.v1+zip \
+            "${PACK_FILE}:application/vnd.greentic.gtpack.v1+zip"
 
           if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             oras tag "${PACK_REPO}:${GITHUB_SHA}" latest
@@ -95,8 +95,8 @@ jobs:
           PACK_FILE: dist/packs/oauth-oidc-generic.gtpack
         run: |
           oras push "${PACK_REPO}:${GITHUB_SHA}" \
-            --artifact-type application/vnd.greentic.gtpack.v1+binary \
-            "${PACK_FILE}:application/vnd.greentic.gtpack.layer.v1+binary"
+            --artifact-type application/vnd.greentic.gtpack.v1+zip \
+            "${PACK_FILE}:application/vnd.greentic.gtpack.v1+zip"
 
           if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             oras tag "${PACK_REPO}:${GITHUB_SHA}" latest
