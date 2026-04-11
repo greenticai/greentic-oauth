@@ -17,6 +17,7 @@ pub struct ExchangeInput<'a> {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)] // fields consumed in Task 8 (persist access_token, inject activity)
 pub struct ExchangeOutput {
     pub access_token: String,
     pub token_type: Option<String>,

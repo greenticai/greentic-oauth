@@ -29,6 +29,7 @@ pub struct CreateInput {
 #[derive(Debug, Clone)]
 pub struct SessionTicket {
     pub state_token: String,
+    #[allow(dead_code)] // returned to caller for future use; today caller reads state_token + code_challenge
     pub code_verifier: String,
     pub code_challenge: String,
 }
