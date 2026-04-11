@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 pub mod extension_manifest;
+mod oauth_session;
 
 use oauth_card::CardResolveInput;
 use oidc_provider::{

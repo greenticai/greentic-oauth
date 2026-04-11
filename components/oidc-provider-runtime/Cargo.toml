@@ -12,8 +12,11 @@ description = "Runtime operation adapter for OIDC extension provider components.
 [dependencies]
 oauth-card = { path = "../oauth-card" }
 oidc-provider = { path = "../oidc-provider", features = ["wit-http"] }
+base64.workspace = true
+rand.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 url.workspace = true
 wit-bindgen.workspace = true
