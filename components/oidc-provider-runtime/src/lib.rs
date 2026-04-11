@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 pub mod extension_manifest;
 mod oauth_session;
 mod ingest_http_helpers;
+mod token_exchange;
 
 use oauth_card::CardResolveInput;
 use oidc_provider::{
@@ -480,12 +481,34 @@ fn handle_ingest_http(input: Value, _default_provider_id: &str) -> Result<Value,
         session.provider_id,
     );
 
-    // Stub for Task 7: token exchange
-    let _ = (client_id, client_secret, token_url, code, redirect_uri, session.code_verifier.clone());
-    // TODO(Task 7): token_exchange::exchange_code(...)
+    // Token exchange via WIT http client
+    let http_client = WitHttpClient;
+    let exchange_result = token_exchange::exchange_code(
+        &http_client,
+        token_exchange::ExchangeInput {
+            token_url: &token_url,
+            client_id: &client_id,
+            client_secret: &client_secret,
+            code: &code,
+            code_verifier: &session.code_verifier,
+            redirect_uri: &redirect_uri,
+        },
+    );
+    let token = match exchange_result {
+        Ok(t) => t,
+        Err(RuntimeError::InvalidInput(msg)) => {
+            return Ok(json_http_response(
+                502,
+                "text/html; charset=utf-8",
+                ingest_http_helpers::error_html(&format!("token exchange failed: {msg}"))
+                    .as_bytes(),
+            ));
+        }
+        Err(err) => return Err(err),
+    };
 
-    // Stub for Task 8: persist + inject activity
-    // TODO(Task 8): persist_access_token + inject_activity
+    // Stub for Task 8: persist access_token + inject activity
+    let _ = token;
 
     Ok(json_http_response(
         200,
@@ -824,6 +847,58 @@ impl oauth_session::StateStore for WitStateStore {
     }
     fn delete(&self, _key: &str, _tenant: &str, _team: Option<&str>) -> Result<(), String> {
         Err("state-store not available outside wasm".to_string())
+    }
+}
+
+// ---------------------------------------------------------------------------
+// WitHttpClient: bridges token_exchange::HttpClient to the WIT http import
+// ---------------------------------------------------------------------------
+
+#[cfg(target_arch = "wasm32")]
+struct WitHttpClient;
+
+#[cfg(target_arch = "wasm32")]
+impl token_exchange::HttpClient for WitHttpClient {
+    fn post_form(&self, url: &str, body: &str) -> Result<token_exchange::HttpResponse, String> {
+        let request = oidc_provider::HttpRequest {
+            method: "POST".to_string(),
+            url: url.to_string(),
+            headers: vec![
+                ("Content-Type".to_string(), "application/x-www-form-urlencoded".to_string()),
+                ("Accept".to_string(), "application/json".to_string()),
+                ("User-Agent".to_string(), "greentic-oidc/oauth-callback".to_string()),
+            ],
+            body: Some(body.as_bytes().to_vec()),
+            options: oidc_provider::HttpRequestOptions {
+                timeout_ms: Some(10_000),
+                allow_insecure: None,
+                follow_redirects: Some(true),
+            },
+        };
+        match oidc_provider::wit_http::send_via_host(&request) {
+            Ok(Ok(resp)) => {
+                let content_type = resp.headers.iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case("content-type"))
+                    .map(|(_, v)| v.clone());
+                Ok(token_exchange::HttpResponse {
+                    status: resp.status,
+                    body: resp.body.unwrap_or_default(),
+                    content_type,
+                })
+            }
+            Ok(Err(err)) => Err(format!("{} ({})", err.message, err.code)),
+            Err(err) => Err(format!("http request build failed: {err}")),
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+struct WitHttpClient;
+
+#[cfg(not(target_arch = "wasm32"))]
+impl token_exchange::HttpClient for WitHttpClient {
+    fn post_form(&self, _url: &str, _body: &str) -> Result<token_exchange::HttpResponse, String> {
+        Err("http client not available outside wasm".to_string())
     }
 }
 
