@@ -109,10 +109,10 @@ impl OidcComponent {
         validate_https_url(&host.public_base_url)
             .map_err(OidcComponentError::InvalidPublicBaseUrl)
             .and_then(|url| {
-                if url.scheme() != "https" {
-                    Err(OidcComponentError::InsecurePublicBaseUrl)
-                } else {
+                if url.scheme() == "https" || (url.scheme() == "http" && is_loopback_host(&url)) {
                     Ok(url)
+                } else {
+                    Err(OidcComponentError::InsecurePublicBaseUrl)
                 }
             })?;
 
@@ -328,6 +328,15 @@ fn validate_https_url(input: &str) -> Result<Url, String> {
     Url::parse(input).map_err(|err| err.to_string())
 }
 
+fn is_loopback_host(url: &Url) -> bool {
+    match url.host() {
+        Some(url::Host::Domain(domain)) => domain.eq_ignore_ascii_case("localhost"),
+        Some(url::Host::Ipv4(addr)) => addr.is_loopback(),
+        Some(url::Host::Ipv6(addr)) => addr.is_loopback(),
+        None => false,
+    }
+}
+
 fn encode_form_body(form: &[(String, String)]) -> String {
     let mut serializer = url::form_urlencoded::Serializer::new(String::new());
     for (k, v) in form {
@@ -501,7 +510,7 @@ mod tests {
     fn rejects_insecure_public_base_url() {
         let err = OidcComponent::new(
             HostConfig {
-                public_base_url: "http://localhost:8080".to_string(),
+                public_base_url: "http://example.com".to_string(),
             },
             OidcProviderConfig {
                 provider_id: "oidc-generic".to_string(),
@@ -576,6 +585,72 @@ mod tests {
             }
             other => panic!("unexpected result: {other:?}"),
         }
+    }
+
+    #[test]
+    fn loopback_http_127_0_0_1_is_accepted_as_public_base_url() {
+        let host = HostConfig {
+            public_base_url: "http://127.0.0.1:8090".to_string(),
+        };
+        let provider = OidcProviderConfig {
+            provider_id: "github".to_string(),
+            client_id: "cid".to_string(),
+            client_secret: Some("csec".to_string()),
+            auth_url: "https://github.com/login/oauth/authorize".to_string(),
+            token_url: "https://github.com/login/oauth/access_token".to_string(),
+            default_scopes: vec![],
+        };
+        let result = OidcComponent::new(host, provider);
+        assert!(result.is_ok(), "loopback HTTP public_base_url should be accepted, got {:?}", result.err());
+    }
+
+    #[test]
+    fn loopback_http_localhost_is_accepted_as_public_base_url() {
+        let host = HostConfig {
+            public_base_url: "http://localhost:8090".to_string(),
+        };
+        let provider = OidcProviderConfig {
+            provider_id: "github".to_string(),
+            client_id: "cid".to_string(),
+            client_secret: Some("csec".to_string()),
+            auth_url: "https://github.com/login/oauth/authorize".to_string(),
+            token_url: "https://github.com/login/oauth/access_token".to_string(),
+            default_scopes: vec![],
+        };
+        assert!(OidcComponent::new(host, provider).is_ok());
+    }
+
+    #[test]
+    fn loopback_http_ipv6_is_accepted_as_public_base_url() {
+        let host = HostConfig {
+            public_base_url: "http://[::1]:8090".to_string(),
+        };
+        let provider = OidcProviderConfig {
+            provider_id: "github".to_string(),
+            client_id: "cid".to_string(),
+            client_secret: Some("csec".to_string()),
+            auth_url: "https://github.com/login/oauth/authorize".to_string(),
+            token_url: "https://github.com/login/oauth/access_token".to_string(),
+            default_scopes: vec![],
+        };
+        assert!(OidcComponent::new(host, provider).is_ok());
+    }
+
+    #[test]
+    fn non_loopback_http_is_still_rejected_as_public_base_url() {
+        let host = HostConfig {
+            public_base_url: "http://example.com".to_string(),
+        };
+        let provider = OidcProviderConfig {
+            provider_id: "github".to_string(),
+            client_id: "cid".to_string(),
+            client_secret: Some("csec".to_string()),
+            auth_url: "https://github.com/login/oauth/authorize".to_string(),
+            token_url: "https://github.com/login/oauth/access_token".to_string(),
+            default_scopes: vec![],
+        };
+        let err = OidcComponent::new(host, provider).unwrap_err();
+        assert_eq!(err, OidcComponentError::InsecurePublicBaseUrl);
     }
 
     #[test]
