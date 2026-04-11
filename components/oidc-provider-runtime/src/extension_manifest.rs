@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 pub const PROVIDER_EXTENSION_KEY: &str = "greentic.provider-extension.v1";
 pub const OIDC_INGRESS_EXTENSION_KEY: &str = "oauth.provider_ingress.v1";
 pub const OIDC_FLOW_HINTS_KEY: &str = "oauth.provider_flow_hints.v1";
+pub const HTTP_ROUTES_EXTENSION_KEY: &str = "greentic.http-routes.v1";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OidcExtensionManifestInput<'a> {
@@ -23,6 +24,7 @@ pub fn build_oidc_extension_manifest(input: OidcExtensionManifestInput<'_>) -> V
                     {
                         "provider_type": input.provider_type,
                         "capabilities": ["oauth", "oauth-card"],
+                        "envelope_wrap": true,
                         "ops": [
                             "authorize-url",
                             "exchange-code",
@@ -63,6 +65,22 @@ pub fn build_oidc_extension_manifest(input: OidcExtensionManifestInput<'_>) -> V
                     "refresh": "refresh-token"
                 }
             }
+        },
+        HTTP_ROUTES_EXTENSION_KEY: {
+            "kind": HTTP_ROUTES_EXTENSION_KEY,
+            "version": input.version,
+            "inline": {
+                "schema_version": 1,
+                "routes": [
+                    {
+                        "id": "oauth-oidc-callback",
+                        "pattern": "/v1/oauth/callback/{path*}",
+                        "methods": ["GET", "POST"],
+                        "provider_op": "ingest_http",
+                        "domain": "oauth"
+                    }
+                ]
+            }
         }
     })
 }
@@ -86,12 +104,24 @@ mod tests {
             "oidc-provider-runtime"
         );
         assert_eq!(
+            manifest[PROVIDER_EXTENSION_KEY]["inline"]["providers"][0]["envelope_wrap"],
+            true
+        );
+        assert_eq!(
             manifest[OIDC_INGRESS_EXTENSION_KEY]["inline"]["component_ref"],
             "oidc-ingress"
         );
         assert_eq!(
             manifest[OIDC_FLOW_HINTS_KEY]["inline"]["oauth.oidc.generic"]["callback"],
             "exchange-code"
+        );
+        assert_eq!(
+            manifest[HTTP_ROUTES_EXTENSION_KEY]["inline"]["routes"][0]["pattern"],
+            "/v1/oauth/callback/{path*}"
+        );
+        assert_eq!(
+            manifest[HTTP_ROUTES_EXTENSION_KEY]["inline"]["routes"][0]["domain"],
+            "oauth"
         );
     }
 }
