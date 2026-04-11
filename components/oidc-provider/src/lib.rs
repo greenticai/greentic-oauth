@@ -95,6 +95,10 @@ pub enum OidcComponentError {
 }
 
 impl OidcComponent {
+    pub fn provider_id(&self) -> &str {
+        &self.provider.provider_id
+    }
+
     pub fn new(host: HostConfig, provider: OidcProviderConfig) -> Result<Self, OidcComponentError> {
         if provider.provider_id.trim().is_empty() {
             return Err(OidcComponentError::MissingField("provider_id"));

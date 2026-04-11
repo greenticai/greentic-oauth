@@ -298,48 +298,62 @@ fn token_error_message(status: u16, payload: &Value) -> String {
 }
 
 fn handle_resolve_card(component: OidcComponent, input: Value) -> Result<Value, RuntimeError> {
-    let card_input: CardResolveDispatchInput =
-        serde_json::from_value(input).map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
+    let store = WitStateStore;
+    handle_resolve_card_with_store(component, input, &store)
+}
 
-    let start_url = if let Some(url) = card_input.start_url.filter(|u| !u.trim().is_empty()) {
+fn handle_resolve_card_with_store(
+    component: OidcComponent,
+    input: Value,
+    store: &dyn oauth_session::StateStore,
+) -> Result<Value, RuntimeError> {
+    let card_input: CardResolveDispatchInput = serde_json::from_value(input)
+        .map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
+
+    let start_url = if let Some(url) = card_input
+        .start_url
+        .clone()
+        .filter(|u| !u.trim().is_empty())
+    {
+        // Pre-built URL path: backward-compat for existing tests + external callers
         url
     } else {
+        // Self-contained path: create session inside WASM via state-store
         let tenant = card_input
             .tenant
+            .clone()
             .filter(|v| !v.trim().is_empty())
             .ok_or_else(|| {
                 RuntimeError::InvalidInput(
                     "tenant is required when start_url is not provided".into(),
                 )
             })?;
-        let state = card_input
-            .state
-            .filter(|v| !v.trim().is_empty())
-            .ok_or_else(|| {
-                RuntimeError::InvalidInput(
-                    "state is required when start_url is not provided (RFC 6749 CSRF protection)"
-                        .into(),
-                )
-            })?;
-        let code_challenge = card_input
-            .code_challenge
-            .filter(|v| !v.trim().is_empty())
-            .ok_or_else(|| {
-                RuntimeError::InvalidInput(
-                    "code_challenge is required when start_url is not provided (RFC 7636 PKCE)"
-                        .into(),
-                )
-            })?;
+        let conversation_id = card_input.conversation_id.clone().unwrap_or_default();
+        let provider_pack_id = card_input
+            .provider_pack_id
+            .clone()
+            .unwrap_or_else(|| component.provider_id().to_string());
+
+        let ticket = oauth_session::create_session(
+            store,
+            oauth_session::CreateInput {
+                tenant: tenant.clone(),
+                team: card_input.team.clone(),
+                provider_id: component.provider_id().to_string(),
+                provider_pack_id,
+                conversation_id,
+            },
+        )?;
+
         let authorize_req = AuthorizeRequest {
             tenant,
-            state,
-            code_challenge,
-            scopes: card_input.scopes.unwrap_or_default(),
+            state: ticket.state_token,
+            code_challenge: ticket.code_challenge,
+            scopes: card_input.scopes.clone().unwrap_or_default(),
             extra_auth_params: BTreeMap::new(),
         };
-        let result =
-            component.execute_operation(ExtensionOperation::AuthorizeUrl(authorize_req))?;
-        match result {
+
+        match component.execute_operation(ExtensionOperation::AuthorizeUrl(authorize_req))? {
             ExtensionOperationResult::AuthorizeUrlBuilt { url, .. } => url,
             _ => {
                 return Err(RuntimeError::InvalidInput(
@@ -612,6 +626,12 @@ struct CardResolveDispatchInput {
     #[serde(default)]
     tenant: Option<String>,
     #[serde(default)]
+    team: Option<String>,
+    #[serde(default)]
+    conversation_id: Option<String>,
+    #[serde(default)]
+    provider_pack_id: Option<String>,
+    #[serde(default)]
     state: Option<String>,
     #[serde(default)]
     code_challenge: Option<String>,
@@ -636,6 +656,128 @@ struct IngestHttpInput {
     #[serde(default)]
     query: Vec<(String, String)>,
 }
+
+// ---------------------------------------------------------------------------
+// WitStateStore: bridges oauth_session::StateStore to the WIT state-store import
+// ---------------------------------------------------------------------------
+
+#[cfg(target_arch = "wasm32")]
+struct WitStateStore;
+
+#[cfg(target_arch = "wasm32")]
+impl oauth_session::StateStore for WitStateStore {
+    fn read(&self, key: &str, tenant: &str, team: Option<&str>) -> Result<Option<Vec<u8>>, String> {
+        use crate::bindings::greentic::state::state_store;
+        use crate::bindings::greentic::interfaces_types::types as itypes;
+        let ctx = Some(itypes::TenantCtx {
+            env: String::new(),
+            tenant: tenant.to_string(),
+            tenant_id: tenant.to_string(),
+            team: team.map(str::to_string),
+            team_id: team.map(str::to_string),
+            user: None,
+            user_id: None,
+            trace_id: None,
+            i18n_id: None,
+            correlation_id: None,
+            attributes: Vec::new(),
+            session_id: None,
+            flow_id: None,
+            node_id: None,
+            provider_id: None,
+            deadline_ms: None,
+            attempt: 0,
+            idempotency_key: None,
+            impersonation: None,
+        });
+        match state_store::read(key, ctx.as_ref()) {
+            Ok(bytes) => Ok(Some(bytes)),
+            Err(err) => {
+                if err.code == "not-found" || err.code == "not_found" {
+                    Ok(None)
+                } else {
+                    Err(format!("{}: {}", err.code, err.message))
+                }
+            }
+        }
+    }
+
+    fn write(&self, key: &str, bytes: &[u8], tenant: &str, team: Option<&str>) -> Result<(), String> {
+        use crate::bindings::greentic::state::state_store;
+        use crate::bindings::greentic::interfaces_types::types as itypes;
+        let ctx = Some(itypes::TenantCtx {
+            env: String::new(),
+            tenant: tenant.to_string(),
+            tenant_id: tenant.to_string(),
+            team: team.map(str::to_string),
+            team_id: team.map(str::to_string),
+            user: None,
+            user_id: None,
+            trace_id: None,
+            i18n_id: None,
+            correlation_id: None,
+            attributes: Vec::new(),
+            session_id: None,
+            flow_id: None,
+            node_id: None,
+            provider_id: None,
+            deadline_ms: None,
+            attempt: 0,
+            idempotency_key: None,
+            impersonation: None,
+        });
+        state_store::write(key, bytes, ctx.as_ref())
+            .map(|_| ())
+            .map_err(|err| format!("{}: {}", err.code, err.message))
+    }
+
+    fn delete(&self, key: &str, tenant: &str, team: Option<&str>) -> Result<(), String> {
+        use crate::bindings::greentic::state::state_store;
+        use crate::bindings::greentic::interfaces_types::types as itypes;
+        let ctx = Some(itypes::TenantCtx {
+            env: String::new(),
+            tenant: tenant.to_string(),
+            tenant_id: tenant.to_string(),
+            team: team.map(str::to_string),
+            team_id: team.map(str::to_string),
+            user: None,
+            user_id: None,
+            trace_id: None,
+            i18n_id: None,
+            correlation_id: None,
+            attributes: Vec::new(),
+            session_id: None,
+            flow_id: None,
+            node_id: None,
+            provider_id: None,
+            deadline_ms: None,
+            attempt: 0,
+            idempotency_key: None,
+            impersonation: None,
+        });
+        state_store::delete(key, ctx.as_ref())
+            .map(|_| ())
+            .map_err(|err| format!("{}: {}", err.code, err.message))
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+struct WitStateStore;
+
+#[cfg(not(target_arch = "wasm32"))]
+impl oauth_session::StateStore for WitStateStore {
+    fn read(&self, _key: &str, _tenant: &str, _team: Option<&str>) -> Result<Option<Vec<u8>>, String> {
+        Err("state-store not available outside wasm".to_string())
+    }
+    fn write(&self, _key: &str, _bytes: &[u8], _tenant: &str, _team: Option<&str>) -> Result<(), String> {
+        Err("state-store not available outside wasm".to_string())
+    }
+    fn delete(&self, _key: &str, _tenant: &str, _team: Option<&str>) -> Result<(), String> {
+        Err("state-store not available outside wasm".to_string())
+    }
+}
+
+// ---------------------------------------------------------------------------
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -839,70 +981,84 @@ mod tests {
     }
 
     #[test]
-    fn dispatches_resolve_card_generates_url() {
-        let output = dispatch(
-            host(),
-            provider(),
-            RuntimeEnvelope {
-                op: "oauth.card.resolve".into(),
-                input: json!({
-                    "adaptive_card": "{\"type\":\"AdaptiveCard\",\"actions\":[{\"type\":\"Action.OpenUrl\",\"url\":\"oauth://start\"}]}",
-                    "tenant": "acme",
-                    "state": "state-1",
-                    "code_challenge": "challenge-1"
-                }),
+    fn dispatches_resolve_card_generates_url_via_session_store() {
+        use crate::oauth_session::test_support::InMemoryStore;
+        let component = OidcComponent::new(
+            HostConfig {
+                public_base_url: "https://auth.acme.example".into(),
+            },
+            OidcProviderConfig {
+                provider_id: "oidc-generic".into(),
+                client_id: "client-123".into(),
+                client_secret: Some("secret-123".into()),
+                auth_url: "https://issuer.example.com/oauth2/v1/authorize".into(),
+                token_url: "https://issuer.example.com/oauth2/v1/token".into(),
+                default_scopes: vec!["openid".into(), "profile".into()],
             },
         )
-        .expect("output");
+        .expect("component");
 
-        assert_eq!(output["ok"], true);
-        let start_url = output["start_url"].as_str().expect("start_url");
-        assert!(start_url.contains("response_type=code"));
+        let input = json!({
+            "adaptive_card": "{\"type\":\"AdaptiveCard\",\"actions\":[{\"type\":\"Action.OpenUrl\",\"url\":\"oauth://start\"}]}",
+            "tenant": "acme",
+            "conversation_id": "conv-1",
+            "provider_pack_id": "oauth-oidc-generic",
+            "scopes": ["openid"]
+        });
+        let store = InMemoryStore::new();
+        let result = handle_resolve_card_with_store(component, input, &store).unwrap();
+
+        assert_eq!(result["ok"], true);
+        let start_url = result["start_url"].as_str().expect("start_url");
+        assert!(
+            start_url.contains("response_type=code"),
+            "start_url should be a built URL, got: {}",
+            start_url
+        );
 
         let resolved: Value =
-            serde_json::from_str(output["resolved_card"].as_str().expect("resolved_card"))
+            serde_json::from_str(result["resolved_card"].as_str().expect("resolved_card"))
                 .expect("card json");
         assert_eq!(
             resolved.pointer("/actions/0/url").and_then(Value::as_str),
             Some(start_url)
         );
+
+        // Session must be persisted in the store
+        assert_eq!(store.data.borrow().len(), 1, "expected one session persisted");
     }
 
     #[test]
-    fn resolve_card_rejects_missing_state_without_start_url() {
-        let result = dispatch(
-            host(),
-            provider(),
-            RuntimeEnvelope {
-                op: "resolve-card".into(),
-                input: json!({
-                    "adaptive_card": "{\"type\":\"AdaptiveCard\"}",
-                    "tenant": "acme",
-                    "code_challenge": "challenge-1"
-                }),
+    fn resolve_card_rejects_missing_tenant_without_start_url() {
+        use crate::oauth_session::test_support::InMemoryStore;
+        let component = OidcComponent::new(
+            HostConfig {
+                public_base_url: "https://auth.acme.example".into(),
             },
-        );
-        let err = result.expect_err("should fail without state");
-        assert!(err.to_string().contains("state is required"), "got: {err}");
-    }
+            OidcProviderConfig {
+                provider_id: "oidc-generic".into(),
+                client_id: "client-123".into(),
+                client_secret: Some("secret-123".into()),
+                auth_url: "https://issuer.example.com/oauth2/v1/authorize".into(),
+                token_url: "https://issuer.example.com/oauth2/v1/token".into(),
+                default_scopes: vec!["openid".into()],
+            },
+        )
+        .expect("component");
 
-    #[test]
-    fn resolve_card_rejects_missing_code_challenge_without_start_url() {
-        let result = dispatch(
-            host(),
-            provider(),
-            RuntimeEnvelope {
-                op: "resolve-card".into(),
-                input: json!({
-                    "adaptive_card": "{\"type\":\"AdaptiveCard\"}",
-                    "tenant": "acme",
-                    "state": "state-1"
-                }),
-            },
+        let store = InMemoryStore::new();
+        let result = handle_resolve_card_with_store(
+            component,
+            json!({
+                "adaptive_card": "{\"type\":\"AdaptiveCard\"}",
+                "conversation_id": "conv-1"
+                // no tenant, no start_url
+            }),
+            &store,
         );
-        let err = result.expect_err("should fail without code_challenge");
+        let err = result.expect_err("should fail without tenant");
         assert!(
-            err.to_string().contains("code_challenge is required"),
+            err.to_string().contains("tenant is required"),
             "got: {err}"
         );
     }
