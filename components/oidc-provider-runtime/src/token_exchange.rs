@@ -17,7 +17,7 @@ pub struct ExchangeInput<'a> {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)] // fields consumed in Task 8 (persist access_token, inject activity)
+#[allow(dead_code)] // access_token consumed on wasm32 via state_store::write; token_type/scope/refresh_token not yet consumed
 pub struct ExchangeOutput {
     pub access_token: String,
     pub token_type: Option<String>,
