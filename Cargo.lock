@@ -2725,10 +2725,13 @@ dependencies = [
 name = "oidc-provider-runtime"
 version = "0.4.31"
 dependencies = [
+ "base64 0.22.1",
  "oauth-card",
  "oidc-provider",
+ "rand 0.10.0",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror 2.0.18",
  "url",
  "wit-bindgen 0.53.1",
