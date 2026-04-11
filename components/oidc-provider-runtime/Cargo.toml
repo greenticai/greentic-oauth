@@ -30,4 +30,6 @@ world = "oidc-provider-runtime"
 
 [package.metadata.component.target.dependencies]
 "greentic:secrets-store" = { path = "wit/oidc-provider-runtime/deps/secrets-store" }
+"greentic:state" = { path = "wit/oidc-provider-runtime/deps/state" }
+"greentic:interfaces-types" = { path = "wit/oidc-provider-runtime/deps/interfaces-types" }
 "greentic:provider-schema-core" = { path = "wit/oidc-provider-runtime/deps/provider-schema-core" }

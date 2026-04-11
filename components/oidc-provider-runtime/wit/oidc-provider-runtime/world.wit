@@ -1,9 +1,11 @@
 package greentic:oidc-provider-runtime@0.1.0;
 
 use greentic:secrets-store/secrets-store@1.0.0;
+use greentic:state/state-store@1.0.0;
 use greentic:provider-schema-core/schema-core-api@1.0.0;
 
 world oidc-provider-runtime {
   import secrets-store;
+  import state-store;
   export schema-core-api;
 }
