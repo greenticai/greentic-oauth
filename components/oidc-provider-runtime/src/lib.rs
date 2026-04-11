@@ -391,95 +391,130 @@ fn handle_resolve_card_with_store(
     }))
 }
 
-fn handle_ingest_http(input: Value, default_provider_id: &str) -> Result<Value, RuntimeError> {
-    let parsed: IngestHttpInput =
-        serde_json::from_value(input).map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
-    let method = parsed.method.unwrap_or_else(|| "GET".to_string());
-    let path = parsed.path.unwrap_or_default();
-    let query = collect_query_pairs(&path, &parsed.query);
+fn handle_ingest_http(input: Value, _default_provider_id: &str) -> Result<Value, RuntimeError> {
+    let parsed: IngestHttpInput = serde_json::from_value(input)
+        .map_err(|err| RuntimeError::InvalidInput(err.to_string()))?;
 
-    let state = query.get("state").cloned().unwrap_or_default();
-    let code = query.get("code").cloned();
-    let error = query.get("error").cloned();
-    let error_description = query.get("error_description").cloned();
+    // Extract tenant + team for state-store operations
+    let tenant = parsed.tenant_hint.clone().unwrap_or_else(|| "default".to_string());
+    let team = parsed.team_hint.clone();
 
-    let provider_id = parsed
-        .provider
-        .as_ref()
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-        .unwrap_or_else(|| default_provider_id.to_string());
-    let tenant = parsed
-        .tenant_hint
-        .as_ref()
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-        .map(ToString::to_string)
-        .or_else(|| tenant_from_ingress_path(&path))
-        .unwrap_or_else(|| "default".to_string());
+    // Parse query
+    let error_code = ingest_http_helpers::find_query(&parsed.query, "error").map(str::to_string);
+    let error_description =
+        ingest_http_helpers::find_query(&parsed.query, "error_description").map(str::to_string);
+    let state = ingest_http_helpers::find_query(&parsed.query, "state").map(str::to_string);
+    let code = ingest_http_helpers::find_query(&parsed.query, "code").map(str::to_string);
 
-    let (status, body_json) =
-        if !method.eq_ignore_ascii_case("GET") && !method.eq_ignore_ascii_case("POST") {
-            (
-                405u16,
-                json!({
-                    "ok": false,
-                    "error": "only GET/POST callbacks are supported",
-                    "provider_id": provider_id,
-                    "tenant": tenant,
-                    "method": method
-                }),
-            )
-        } else if state.is_empty() {
-            (
-                400u16,
-                json!({
-                    "ok": false,
-                    "error": "missing state query parameter",
-                    "provider_id": provider_id,
-                    "tenant": tenant
-                }),
-            )
-        } else if code.is_none() && error.is_none() {
-            (
-                400u16,
-                json!({
-                    "ok": false,
-                    "error": "missing code or error query parameter",
-                    "provider_id": provider_id,
-                    "tenant": tenant,
-                    "state": state
-                }),
-            )
-        } else {
-            (
-                200u16,
-                json!({
-                    "ok": error.is_none(),
-                    "provider_id": provider_id,
-                    "tenant": tenant,
-                    "state": state,
-                    "code": code,
-                    "error": error,
-                    "error_description": error_description
-                }),
-            )
-        };
+    // Early return: provider error
+    if let Some(err) = error_code {
+        let detail = error_description.unwrap_or_else(|| "OAuth provider returned an error".to_string());
+        return Ok(json_http_response(
+            400,
+            "text/html; charset=utf-8",
+            ingest_http_helpers::error_html(&format!("provider error {err}: {detail}"))
+                .as_bytes(),
+        ));
+    }
 
-    Ok(json!({
-        "http": {
-            "status": status,
-            "headers": {
-                "content-type": "application/json; charset=utf-8",
-                "cache-control": "no-store"
-            },
-            "body_json": body_json
-        },
-        "events": []
-    }))
+    // Early return: missing code or state
+    let (state, code) = match (state, code) {
+        (Some(s), Some(c)) => (s, c),
+        _ => {
+            return Ok(json_http_response(
+                400,
+                "text/html; charset=utf-8",
+                ingest_http_helpers::error_html("callback missing code or state").as_bytes(),
+            ));
+        }
+    };
+
+    // Consume session
+    let store = WitStateStore;
+    let session = match oauth_session::consume_session(&store, &state, &tenant, team.as_deref()) {
+        Ok(s) => s,
+        Err(RuntimeError::InvalidInput(msg)) => {
+            return Ok(json_http_response(
+                400,
+                "text/html; charset=utf-8",
+                ingest_http_helpers::error_html(&format!("session error: {msg}")).as_bytes(),
+            ));
+        }
+        Err(err) => return Err(err),
+    };
+
+    // Validate provider_id from path
+    let path = parsed.path.clone().unwrap_or_default();
+    let provider_id_from_path = ingest_http_helpers::extract_provider_id_from_path(&path)
+        .unwrap_or_default();
+    if provider_id_from_path != session.provider_id {
+        return Ok(json_http_response(
+            400,
+            "text/html; charset=utf-8",
+            ingest_http_helpers::error_html(&format!(
+                "provider_id mismatch: path={provider_id_from_path} session={}",
+                session.provider_id
+            ))
+            .as_bytes(),
+        ));
+    }
+
+    // Read config fields (injected by greentic-start build_injected_config)
+    let config = parsed.config.unwrap_or_else(|| json!({}));
+    let client_id = read_config_secret_b64(&config, "client_id")
+        .ok_or_else(|| RuntimeError::InvalidInput("config.client_id_b64 missing".into()))?;
+    let client_secret = read_config_secret_b64(&config, "client_secret")
+        .ok_or_else(|| RuntimeError::InvalidInput("config.client_secret_b64 missing".into()))?;
+    let token_url = read_config_secret_b64(&config, "token_url")
+        .ok_or_else(|| RuntimeError::InvalidInput("config.token_url_b64 missing".into()))?;
+    let public_base_url = config
+        .get("public_base_url")
+        .and_then(Value::as_str)
+        .ok_or_else(|| RuntimeError::InvalidInput("config.public_base_url missing".into()))?
+        .to_string();
+
+    // Build redirect_uri (must match what was used in authorize URL)
+    let redirect_uri = format!(
+        "{}/v1/oauth/callback/{}",
+        public_base_url.trim_end_matches('/'),
+        session.provider_id,
+    );
+
+    // Stub for Task 7: token exchange
+    let _ = (client_id, client_secret, token_url, code, redirect_uri, session.code_verifier.clone());
+    // TODO(Task 7): token_exchange::exchange_code(...)
+
+    // Stub for Task 8: persist + inject activity
+    // TODO(Task 8): persist_access_token + inject_activity
+
+    Ok(json_http_response(
+        200,
+        "text/html; charset=utf-8",
+        ingest_http_helpers::success_html(&session.tenant).as_bytes(),
+    ))
 }
 
+fn json_http_response(status: u16, content_type: &str, body: &[u8]) -> Value {
+    use base64::Engine;
+    json!({
+        "ok": true,
+        "http_response": {
+            "status": status,
+            "content_type": content_type,
+            "body_b64": base64::engine::general_purpose::STANDARD.encode(body),
+        },
+    })
+}
+
+fn read_config_secret_b64(config: &Value, key: &str) -> Option<String> {
+    use base64::Engine;
+    let key_b64 = format!("{key}_b64");
+    let encoded = config.get(&key_b64).and_then(Value::as_str)?;
+    let decoded = base64::engine::general_purpose::STANDARD.decode(encoded).ok()?;
+    String::from_utf8(decoded).ok()
+}
+
+#[allow(dead_code)]
 fn collect_query_pairs(path: &str, query: &[(String, String)]) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
 
@@ -500,6 +535,7 @@ fn collect_query_pairs(path: &str, query: &[(String, String)]) -> BTreeMap<Strin
     out
 }
 
+#[allow(dead_code)]
 fn tenant_from_ingress_path(path: &str) -> Option<String> {
     let path_without_query = path.split('?').next().unwrap_or(path);
     let segments = path_without_query
@@ -644,18 +680,31 @@ struct CardResolveDispatchInput {
     native_oauth_card: Option<bool>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
 struct IngestHttpInput {
+    #[serde(default)]
+    v: Option<u32>,
     #[serde(default)]
     provider: Option<String>,
     #[serde(default)]
+    binding_id: Option<String>,
+    #[serde(default)]
     tenant_hint: Option<String>,
+    #[serde(default)]
+    team_hint: Option<String>,
     #[serde(default)]
     method: Option<String>,
     #[serde(default)]
     path: Option<String>,
     #[serde(default)]
     query: Vec<(String, String)>,
+    #[serde(default)]
+    headers: Vec<(String, String)>,
+    #[serde(default)]
+    body: Vec<u8>,
+    #[serde(default)]
+    config: Option<serde_json::Value>,
 }
 
 // ---------------------------------------------------------------------------
@@ -1066,6 +1115,8 @@ mod tests {
 
     #[test]
     fn dispatches_ingest_http_callback_operation() {
+        // On native (non-wasm), consume_session returns "state-store not available outside wasm"
+        // which maps to InvalidInput and returns a 400 HTML error response.
         let output = dispatch(
             host(),
             provider(),
@@ -1074,15 +1125,48 @@ mod tests {
                 input: json!({
                     "provider": "oauth-oidc-generic",
                     "method": "GET",
-                    "path": "/v1/oauth/ingress/oauth-oidc-generic/acme/default",
+                    "path": "/v1/oauth/callback/oidc-generic",
                     "query": [["code", "code-1"], ["state", "state-1"]]
                 }),
             },
         )
         .expect("output");
 
-        assert_eq!(output["http"]["status"], 200);
-        assert_eq!(output["http"]["body_json"]["ok"], true);
-        assert_eq!(output["http"]["body_json"]["tenant"], "acme");
+        // Native stub returns unavailable, so expect 400 session error HTML
+        assert_eq!(output["http_response"]["status"], 400);
+        let body_b64 = output["http_response"]["body_b64"].as_str().unwrap();
+        use base64::Engine;
+        let body = base64::engine::general_purpose::STANDARD.decode(body_b64).unwrap();
+        let body_str = String::from_utf8(body).unwrap();
+        assert!(body_str.contains("session error"));
+    }
+
+    #[test]
+    fn handle_ingest_http_returns_error_html_on_provider_error_query() {
+        let input = json!({
+            "v": 1,
+            "query": [["error", "access_denied"], ["error_description", "user canceled"]],
+            "tenant_hint": "demo",
+        });
+        let result = handle_ingest_http(input, "oauth-oidc-generic").unwrap();
+        assert_eq!(result["http_response"]["status"], 400);
+        let body_b64 = result["http_response"]["body_b64"].as_str().unwrap();
+        use base64::Engine;
+        let body = base64::engine::general_purpose::STANDARD
+            .decode(body_b64)
+            .unwrap();
+        let body_str = String::from_utf8(body).unwrap();
+        assert!(body_str.contains("access_denied"));
+    }
+
+    #[test]
+    fn handle_ingest_http_returns_error_html_on_missing_code() {
+        let input = json!({
+            "v": 1,
+            "query": [["state", "xyz"]],
+            "tenant_hint": "demo",
+        });
+        let result = handle_ingest_http(input, "oauth-oidc-generic").unwrap();
+        assert_eq!(result["http_response"]["status"], 400);
     }
 }
