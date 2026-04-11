@@ -20,8 +20,14 @@ pub fn html_escape(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
+// SAFETY: `tenant` is interpolated into both HTML and the meta-refresh URL
+// without escaping. This is safe only because tenant is system-controlled
+// (operator-assigned from bundle config), never user input. If that ever
+// changes, switch to `html_escape(tenant)` and percent-encode the URL path.
 pub fn success_html(tenant: &str) -> String {
     format!(
         r#"<!DOCTYPE html>
@@ -87,6 +93,8 @@ mod tests {
     #[test]
     fn html_escape_escapes_basic_chars() {
         assert_eq!(html_escape("a<b>&c"), "a&lt;b&gt;&amp;c");
+        assert_eq!(html_escape("he said \"hi\""), "he said &quot;hi&quot;");
+        assert_eq!(html_escape("it's"), "it&#39;s");
     }
 
     #[test]
