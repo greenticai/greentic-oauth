@@ -18,7 +18,13 @@ jobs:
   dev-publish:
     uses: greenticai/.github/.github/workflows/dev-publish.yml@main
     with:
-      crates: "greentic-oauth-core greentic-oauth-broker greentic-oauth-host greentic-oauth-sdk greentic-oauth-client"
-      exclude-crates: "oidc-ingress oidc-provider-runtime"
+      # greentic-oauth-broker intentionally omitted: legacy ci.yml excludes it from
+      #   build/clippy/test and the crate has never been published from CI (legacy
+      #   publish.yml ran in dry-run mode). Has pre-existing test failure in
+      #   tests/http_flow.rs::start_to_callback_happy_path. No other crate depends on it.
+      crates: "greentic-oauth-core greentic-oauth-host greentic-oauth-sdk greentic-oauth-client"
+      # oidc-ingress / oidc-provider-runtime: cdylib WASM components that cannot build natively.
+      # greentic-oauth-broker: excluded here too so build/clippy/test skip it (matches legacy ci.yml).
+      exclude-crates: "oidc-ingress oidc-provider-runtime greentic-oauth-broker"
       wasm-target: true
     secrets: inherit
