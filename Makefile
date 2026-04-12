@@ -1,13 +1,10 @@
-.PHONY: build test run fmt fmt-check clippy lint check docker oauth-oidc-generic-pack-build oauth-oidc-generic-pack-clean
+.PHONY: build test fmt fmt-check clippy lint check docker oauth-oidc-generic-pack-build oauth-oidc-generic-pack-clean
 
 build:
 	cargo build --workspace
 
 test:
 	cargo test --workspace
-
-run:
-	cargo run -p greentic-oauth-broker
 
 fmt:
 	cargo fmt --all
