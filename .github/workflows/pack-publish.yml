@@ -1,10 +1,9 @@
-name: Publish crates (single or workspace)
+name: Publish OAuth OIDC Generic Pack
 
 on:
   push:
-    branches: [main]
-    tags: [ "v*" ]
-  workflow_dispatch:
+    tags: ["v*"]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -15,44 +14,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
-
-  publish:
-    if: github.event_name == 'push'
-    needs: ci
+  publish-pack:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.91.0
-      - uses: Swatinem/rust-cache@v2
-      - name: Publish changed crates
-        uses: katyo/publish-crates@v2
-        with:
-          path: .
-          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          ignore-unpublished-changes: true
-          check-repo: true
-          dry-run: true
-
-  publish-oauth-oidc-generic-pack:
-    if: github.event_name == 'push'
-    needs: ci
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.91.0
+          toolchain: 1.94.0
           targets: wasm32-wasip2
 
       - uses: Swatinem/rust-cache@v2
@@ -80,14 +49,7 @@ jobs:
           oras push "${PACK_REPO}:${GITHUB_SHA}" \
             --artifact-type application/vnd.greentic.gtpack.v1+zip \
             "${PACK_FILE}:application/vnd.greentic.gtpack.v1+zip"
-
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            oras tag "${PACK_REPO}:${GITHUB_SHA}" latest
-          fi
-
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            oras tag "${PACK_REPO}:${GITHUB_SHA}" "${GITHUB_REF_NAME}"
-          fi
+          oras tag "${PACK_REPO}:${GITHUB_SHA}" "${GITHUB_REF_NAME}"
 
       - name: Publish pack to GHCR (canonical path)
         env:
@@ -97,14 +59,7 @@ jobs:
           oras push "${PACK_REPO}:${GITHUB_SHA}" \
             --artifact-type application/vnd.greentic.gtpack.v1+zip \
             "${PACK_FILE}:application/vnd.greentic.gtpack.v1+zip"
-
-          if [[ "${GITHUB_REF_NAME}" == "main" ]]; then
-            oras tag "${PACK_REPO}:${GITHUB_SHA}" latest
-          fi
-
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            oras tag "${PACK_REPO}:${GITHUB_SHA}" "${GITHUB_REF_NAME}"
-          fi
+          oras tag "${PACK_REPO}:${GITHUB_SHA}" "${GITHUB_REF_NAME}"
 
       - name: Cleanup pack artifacts
         if: always()
