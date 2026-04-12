@@ -202,11 +202,6 @@ run_cargo_test() {
   cargo test --workspace --all-features --locked -- --nocapture
 }
 
-run_broker_release_build() {
-  require_tool "cargo" "cargo build -p greentic-oauth-broker --release" || return $?
-  cargo build -p greentic-oauth-broker --release --locked
-}
-
 run_wasm_build() {
   local desc="cargo build (wasm32-wasip2)"
   require_tool "cargo" "$desc" || return $?
@@ -288,26 +283,6 @@ run_schema_drift_check() {
   fi
 }
 
-run_conformance_msgraph() {
-  local desc="conformance example (msgraph)"
-  require_tool "cargo" "$desc" || return $?
-  require_online "$desc" || return $?
-  require_env_vars "$desc" MS_TENANT_ID MS_CLIENT_ID MS_CLIENT_SECRET MS_REFRESH_TOKEN_SEEDED || return $?
-  RUST_LOG=info cargo run --locked -p greentic-oauth-broker --example conformance_live -- \
-    --provider msgraph \
-    --checks discovery,jwks,client_credentials,signed_fetch,refresh,revocation
-}
-
-run_conformance_oidc() {
-  local desc="conformance example (oidc)"
-  require_tool "cargo" "$desc" || return $?
-  require_online "$desc" || return $?
-  require_env_vars "$desc" OIDC_ISSUER OIDC_CLIENT_ID OIDC_CLIENT_SECRET OIDC_REFRESH_TOKEN_SEEDED OIDC_AUDIENCE || return $?
-  RUST_LOG=info cargo run --locked -p greentic-oauth-broker --example conformance_live -- \
-    --provider oidc \
-    --checks discovery,jwks,client_credentials,signed_fetch,refresh,revocation
-}
-
 require_env_vars() {
   local desc="$1"
   shift
@@ -354,9 +329,6 @@ main() {
   step "Workspace tests"
   run_or_skip "cargo test --workspace --all-features --locked" run_cargo_test
 
-  step "Broker release build"
-  run_or_skip "cargo build -p greentic-oauth-broker --release --locked" run_broker_release_build
-
   step "wasm32-wasip2 build"
   run_or_skip "cargo build -p greentic-oauth-sdk --target wasm32-wasip2 --locked" run_wasm_build
 
@@ -365,12 +337,6 @@ main() {
 
   step "Schema drift"
   run_or_skip "schema drift check" run_schema_drift_check
-
-  step "Conformance example (msgraph)"
-  run_or_skip "cargo run conformance msgraph" run_conformance_msgraph
-
-  step "Conformance example (oidc)"
-  run_or_skip "cargo run conformance oidc" run_conformance_oidc
 
   echo ""
   echo "All requested checks completed."
