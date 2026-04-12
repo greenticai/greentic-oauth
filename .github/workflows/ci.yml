@@ -35,7 +35,7 @@ jobs:
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
           rust-toolchain: manual
-          package: "greentic-oauth-broker,greentic-oauth-client,greentic-oauth-core,greentic-oauth-host,greentic-oauth-sdk"
+          package: "greentic-oauth-client,greentic-oauth-core,greentic-oauth-host,greentic-oauth-sdk"
 
   check:
     runs-on: ubuntu-latest
@@ -76,13 +76,13 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Cargo clippy
-        run: cargo clippy --workspace --all-features --exclude greentic-oauth-broker -- -D warnings
+        run: cargo clippy --workspace --all-features -- -D warnings
 
       - name: Cargo build
-        run: cargo build --workspace --all-features --exclude greentic-oauth-broker
+        run: cargo build --workspace --all-features
 
       - name: Cargo test
-        run: cargo test --workspace --all-features --exclude greentic-oauth-broker
+        run: cargo test --workspace --all-features
 
       - name: Install greentic-pack CLI (for pack build)
         run: |
