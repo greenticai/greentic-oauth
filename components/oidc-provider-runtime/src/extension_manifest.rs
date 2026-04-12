@@ -50,6 +50,11 @@ pub fn build_oidc_extension_manifest(input: OidcExtensionManifestInput<'_>) -> V
                     "content_types": ["application/x-www-form-urlencoded"],
                     "supports_callback_validation": true
                 },
+                "card_rewrite": {
+                    "marker": "oauth://start",
+                    "capability_id": "greentic.cap.oauth.card.v1",
+                    "op": "oauth.card.resolve"
+                },
                 "component_ref": input.ingress_component_ref,
                 "export": "handle-callback",
                 "world": "greentic:oidc-ingress/callback@0.1.0"
@@ -110,6 +115,14 @@ mod tests {
         assert_eq!(
             manifest[OIDC_INGRESS_EXTENSION_KEY]["inline"]["component_ref"],
             "oidc-ingress"
+        );
+        assert_eq!(
+            manifest[OIDC_INGRESS_EXTENSION_KEY]["inline"]["card_rewrite"]["marker"],
+            "oauth://start"
+        );
+        assert_eq!(
+            manifest[OIDC_INGRESS_EXTENSION_KEY]["inline"]["card_rewrite"]["capability_id"],
+            "greentic.cap.oauth.card.v1"
         );
         assert_eq!(
             manifest[OIDC_FLOW_HINTS_KEY]["inline"]["oauth.oidc.generic"]["callback"],

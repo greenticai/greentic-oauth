@@ -143,6 +143,10 @@ extensions:
         content_types:
         - application/x-www-form-urlencoded
         supports_callback_validation: true
+      card_rewrite:
+        capability_id: greentic.cap.oauth.card.v1
+        marker: oauth://start
+        op: oauth.card.resolve
       component_ref: oidc-ingress
       export: handle-callback
       world: greentic:oidc-ingress/callback@0.1.0
