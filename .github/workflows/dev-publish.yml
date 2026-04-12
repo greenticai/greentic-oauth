@@ -18,7 +18,7 @@ jobs:
   dev-publish:
     uses: greenticai/.github/.github/workflows/dev-publish.yml@main
     with:
-      crates: "greentic-oauth-core greentic-oauth-broker greentic-oauth-host greentic-oauth-sdk greentic-oauth-client"
+      crates: "greentic-oauth-core greentic-oauth-host greentic-oauth-sdk greentic-oauth-client"
       exclude-crates: "oidc-ingress oidc-provider-runtime"
       wasm-target: true
     secrets: inherit
