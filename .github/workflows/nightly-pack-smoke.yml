@@ -1,0 +1,50 @@
+name: Nightly Pack Smoke
+
+# Pack-build smoke moved off pull_request (was part of ci.yml's `check`
+# job) onto a nightly schedule. Building the OAuth OIDC Generic pack
+# pulls greentic-pack + oras and was adding ~5 min to every PR for a
+# signal that's already covered by pack-publish.yml on tag push.
+# See plans/binary-bifurcation.md Phase A.
+
+on:
+  schedule:
+    # 04:23 UTC — staggered from greentic-oauth's Codex slots (04:19 /
+    # 04:23) by a couple of minutes to avoid concurrent resource spikes.
+    # Note: 04:23 is already taken by codex-semver-fix; using 02:23
+    # instead to dodge the early-morning codex burst.
+    - cron: "23 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-pack-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  pack-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          toolchain: 1.95.0
+          targets: wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install greentic-pack CLI
+        run: |
+          if ! command -v greentic-pack >/dev/null 2>&1; then
+            cargo install --locked greentic-pack
+          fi
+
+      - name: Build OAuth OIDC Generic pack
+        run: ./scripts/build-oauth-oidc-generic-pack.sh
+
+      - name: Cleanup pack artifacts
+        if: always()
+        run: ./scripts/clean-oauth-oidc-generic-pack.sh
