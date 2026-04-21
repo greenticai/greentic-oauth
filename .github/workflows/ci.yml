@@ -12,37 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  semver-checks:
-    runs-on: ubuntu-latest
-    env:
-      CARGO_TARGET_DIR: /tmp/greentic-target
-      CARGO_TERM_COLOR: always
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.94.0
-        with:
-          components: rustfmt, clippy
-          targets: wasm32-wasip2
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-      - id: semver
-        continue-on-error: true
-        uses: obi1kenobi/cargo-semver-checks-action@v2
-        with:
-          rust-toolchain: manual
-          package: "greentic-oauth-client,greentic-oauth-core,greentic-oauth-host,greentic-oauth-sdk"
-      - name: Emit advisory
-        if: steps.semver.outcome == 'failure'
-        run: |
-          echo "::warning title=Semver advisory::cargo-semver-checks detected a breaking change vs the current baseline. If intentional, plan to run start-next-minor.sh before the next stable cut. See plans/pre-release-minor-bump-lane.md."
-
   check:
     runs-on: ubuntu-latest
     env:
@@ -53,9 +22,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Rust
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@1.94.0
         with:
-          channel: 1.91.0
           components: rustfmt, clippy
           targets: wasm32-wasip2
 
