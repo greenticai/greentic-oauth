@@ -1,0 +1,38 @@
+name: Nightly Semver Advisory
+
+# Advisory-mode cargo-semver-checks moved off pull_request (was part of ci.yml
+# as an inline job) onto a nightly schedule. See plans/binary-bifurcation.md
+# Phase A. The real semver gate remains at weekly-stable-prepare on the main
+# branch; this is the compass, not the gate.
+#
+# Package filter preserved from the inline job: scoped to the four published
+# Rust library crates (greentic-oauth-client, -core, -host, -sdk). Keeps the
+# advisory run from failing on WASM component crates, the axum example, and
+# the testharness app — none of which are published.
+
+on:
+  schedule:
+    # 05:29 UTC — staggered from greentic-types (05:17) and
+    # greentic-component (05:23).
+    - cron: "48 3 * * *"
+  workflow_dispatch:
+    inputs:
+      baseline-rev:
+        description: "Optional explicit baseline git ref (default: latest vX.Y.Z tag)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-semver-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  advisory:
+    uses: greenticai/.github/.github/workflows/nightly-semver-advisory.yml@main
+    with:
+      semver-checks-package: "greentic-oauth-client,greentic-oauth-core,greentic-oauth-host,greentic-oauth-sdk"
+      semver-baseline-rev: ${{ inputs.baseline-rev || '' }}

@@ -1,0 +1,118 @@
+name: Nightly Pack Smoke
+
+# Pack-build smoke moved off pull_request (was part of ci.yml's `check`
+# job) onto a nightly schedule. Building the OAuth OIDC Generic pack
+# pulls greentic-pack + oras and was adding ~5 min to every PR for a
+# signal that's already covered by pack-publish.yml on tag push.
+# See plans/binary-bifurcation.md Phase A.7 for the gate + notify pattern.
+
+on:
+  schedule:
+    # 03:52 UTC — inside the 03:00-03:59 UTC nightly window per A.7.2
+    # (custom/heavy nightlies 03:35-03:59).
+    - cron: "52 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-pack-smoke-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      should-run: ${{ steps.gate.outputs.should-run }}
+    steps:
+      - id: gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW: ${{ github.workflow }}
+          HEAD_SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          emit() {
+            local should_run="$1"
+            local reason="$2"
+            echo "should-run=${should_run}" >> "${GITHUB_OUTPUT}"
+            {
+              echo "## Nightly gate"
+              echo ""
+              echo "- **Event:** \`${EVENT_NAME}\`"
+              echo "- **Workflow:** \`${WORKFLOW}\`"
+              echo "- **HEAD:** \`${HEAD_SHA}\`"
+              echo "- **Decision:** \`${should_run}\` — ${reason}"
+            } >> "${GITHUB_STEP_SUMMARY}"
+            echo "gate: should-run=${should_run} (${reason})"
+          }
+
+          if [ "${EVENT_NAME}" != "schedule" ]; then
+            emit true "non-schedule event (${EVENT_NAME:-unknown}) always runs"
+            exit 0
+          fi
+
+          last_sha=$(gh run list \
+            --repo "${REPO}" \
+            --workflow "${WORKFLOW}" \
+            --status success \
+            --event schedule \
+            --limit 1 \
+            --json headSha \
+            --jq '.[0].headSha // ""' 2>/dev/null || echo "")
+
+          if [ -z "${last_sha}" ]; then
+            emit true "no prior successful scheduled run — establishing baseline"
+            exit 0
+          fi
+
+          if [ "${last_sha}" = "${HEAD_SHA}" ]; then
+            emit false "unchanged since last successful scheduled run (${last_sha})"
+            exit 0
+          fi
+
+          emit true "changed since last successful scheduled run (${last_sha} → ${HEAD_SHA})"
+
+  pack-build:
+    needs: gate
+    if: needs.gate.outputs.should-run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          toolchain: 1.95.0
+          targets: wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install greentic-pack CLI
+        run: |
+          if ! command -v greentic-pack >/dev/null 2>&1; then
+            cargo install --locked greentic-pack
+          fi
+
+      - name: Build OAuth OIDC Generic pack
+        run: ./scripts/build-oauth-oidc-generic-pack.sh
+
+      - name: Cleanup pack artifacts
+        if: always()
+        run: ./scripts/clean-oauth-oidc-generic-pack.sh
+
+  notify-failure:
+    needs: [gate, pack-build]
+    if: failure() && github.event_name == 'schedule'
+    uses: greenticai/.github/.github/workflows/notify-failure.yml@main
+    with:
+      workflow-name: nightly-pack-smoke
+      repo: ${{ github.repository }}
+      step: pack-build
+      error: "Nightly OAuth pack-build smoke failed — check greentic-pack output."
+    secrets: inherit

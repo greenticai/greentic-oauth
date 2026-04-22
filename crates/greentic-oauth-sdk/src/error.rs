@@ -48,10 +48,3 @@ where
         SdkError::Nats(format!("{err:?}"))
     }
 }
-
-#[cfg(not(target_arch = "wasm32"))]
-impl From<async_nats::SubscribeError> for SdkError {
-    fn from(err: async_nats::SubscribeError) -> Self {
-        SdkError::Nats(err.to_string())
-    }
-}
