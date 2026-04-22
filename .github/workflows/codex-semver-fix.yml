@@ -6,7 +6,7 @@ on:
   schedule:
     # 04:23 UTC — staggered against nightly-semver-advisory callers (05:xx)
     # and against sibling codex callers across the Wave 1 repos.
-    - cron: "23 4 * * *"
+    - cron: "27 3 * * *"
   workflow_dispatch:
     inputs:
       branch:
