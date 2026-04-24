@@ -105,14 +105,3 @@ jobs:
       - name: Cleanup pack artifacts
         if: always()
         run: ./scripts/clean-oauth-oidc-generic-pack.sh
-
-  notify-failure:
-    needs: [gate, pack-build]
-    if: failure() && github.event_name == 'schedule'
-    uses: greenticai/.github/.github/workflows/notify-failure.yml@main
-    with:
-      workflow-name: nightly-pack-smoke
-      repo: ${{ github.repository }}
-      step: pack-build
-      error: "Nightly OAuth pack-build smoke failed — check greentic-pack output."
-    secrets: inherit
