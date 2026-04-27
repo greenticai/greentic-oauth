@@ -15,10 +15,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  dev-publish:
-    uses: greenticai/.github/.github/workflows/dev-publish.yml@main
+  # Stage 1 — tests + version stamping. Outputs the stamped dev version
+  # {M.m.GITHUB_RUN_ID} consumed by binaries + publish.
+  dev-prepare:
+    uses: greenticai/.github/.github/workflows/dev-prepare.yml@main
     with:
-      crates: "greentic-oauth-core greentic-oauth-host greentic-oauth-sdk greentic-oauth-client"
       exclude-crates: "oidc-ingress oidc-provider-runtime"
       wasm-target: true
+
+  dev-publish:
+    needs: [dev-prepare]
+    uses: greenticai/.github/.github/workflows/dev-publish.yml@main
+    with:
+      version: ${{ needs.dev-prepare.outputs.version }}
+      crates: "greentic-oauth-core greentic-oauth-host greentic-oauth-sdk greentic-oauth-client"
     secrets: inherit
