@@ -68,29 +68,29 @@ path = "crates/greentic-oauth-sdk"
 version = ">=0.6.0-dev, <0.7.0-0"
 
 [workspace.dependencies.greentic-telemetry]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 
 [workspace.dependencies.greentic-types]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 default-features = false
 
 [workspace.dependencies.greentic-interfaces-host]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 default-features = false
 
 [workspace.dependencies.greentic-interfaces-wasmtime]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 default-features = false
 
 [workspace.dependencies.greentic-interfaces-guest]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 default-features = false
 
 [workspace.dependencies.greentic-config]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 
 [workspace.dependencies.greentic-config-types]
-version = ">=0.6.0-dev, <0.7.0-0"
+version = "0.5"
 
 [workspace.dependencies.opentelemetry]
 version = "0.31"

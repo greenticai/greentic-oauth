@@ -246,9 +246,9 @@ checksum = "c4512299f36f043ab09a583e57bceb5a5aab7a73db1805848e8fef3c9e8c78b3"
 
 [[package]]
 name = "blake3"
-version = "1.8.4"
+version = "1.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d2d5991425dfd0785aed03aedcf0b321d61975c9b5b3689c774a2610ae0b51e"
+checksum = "0aa83c34e62843d924f905e0f5c866eb1dd6545fc4d719e803d9ba6030371fce"
 dependencies = [
  "arrayref",
  "arrayvec",
@@ -302,9 +302,9 @@ checksum = "e629a66d692cb9ff1a1c664e41771b3dcaf961985a9774c0eb0bd1b51cf60a48"
 
 [[package]]
 name = "cc"
-version = "1.2.60"
+version = "1.2.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43c5703da9466b66a946814e1adf53ea2c90f10063b86290cc9eb67ce3478a20"
+checksum = "d16d90359e986641506914ba71350897565610e87ce0ad9e6f28569db3dd5c6d"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -430,9 +430,9 @@ checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 
 [[package]]
 name = "constant_time_eq"
-version = "0.4.3"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dab3fe76c1571ecd5cfe878b61bce3fedf4adbde5d8a8653b2a7956ffd14628"
+checksum = "3d52eff69cd5e647efe296129160853a42795992097e8af39800e1060caeea9b"
 
 [[package]]
 name = "core-foundation"
@@ -757,9 +757,9 @@ dependencies = [
 
 [[package]]
 name = "data-encoding"
-version = "2.10.0"
+version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
+checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
 name = "deadpool"
@@ -1165,7 +1165,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-axum-example"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1256,7 +1256,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-client"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "reqwest 0.13.2",
  "serde",
@@ -1267,7 +1267,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-core"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1296,7 +1296,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-host"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "async-trait",
  "greentic-interfaces-host",
@@ -1311,7 +1311,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-sdk"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -1572,9 +1572,9 @@ checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
 name = "hybrid-array"
-version = "0.4.10"
+version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3944cf8cf766b40e2a1a333ee5e9b563f854d5fa49d6a8ca2764e97c6eddb214"
+checksum = "08d46837a0ed51fe95bd3b05de33cd64a1ee88fc797477ca48446872504507c5"
 dependencies = [
  "typenum",
 ]
@@ -1959,9 +1959,9 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 
 [[package]]
 name = "libc"
-version = "0.2.185"
+version = "0.2.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52ff2c0fe9bc6cb6b14a0592c2ff4fa9ceb83eea9db979b0487cd054946a2b8f"
+checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
 
 [[package]]
 name = "libm"
@@ -2166,7 +2166,7 @@ dependencies = [
 
 [[package]]
 name = "oauth-card"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2175,7 +2175,7 @@ dependencies = [
 
 [[package]]
 name = "oauth-testharness"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2229,7 +2229,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-ingress"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2240,7 +2240,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-provider"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "greentic-interfaces-guest",
  "thiserror 2.0.18",
@@ -2249,7 +2249,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-provider-runtime"
-version = "0.5.0"
+version = "0.6.0-dev.0"
 dependencies = [
  "oauth-card",
  "oidc-provider",
@@ -2982,9 +2982,9 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.38"
+version = "0.23.39"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69f9466fb2c14ea04357e91413efb882e2a6d4a406e625449bc0a5d360d53a21"
+checksum = "7c2c118cb077cca2822033836dfb1b975355dfb784b5e8da48f7b6c5db74e60e"
 dependencies = [
  "aws-lc-rs",
  "once_cell",
@@ -3009,9 +3009,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-pki-types"
-version = "1.14.0"
+version = "1.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be040f8b0a225e40375822a563fa9524378b9d63112f53e19ffff34df5d33fdd"
+checksum = "30a7197ae7eb376e574fe940d068c30fe0462554a3ddbe4eca7838e049c937a9"
 dependencies = [
  "web-time",
  "zeroize",
@@ -3046,9 +3046,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.12"
+version = "0.103.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8279bb85272c9f10811ae6a6c547ff594d6a7f3c6c6b02ee9726d1d0dcfcdd06"
+checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
 dependencies = [
  "aws-lc-rs",
  "ring",
@@ -4830,9 +4830,9 @@ checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
 
 [[package]]
 name = "winnow"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09dac053f1cd375980747450bfc7250c264eaae0583872e845c0c7cd578872b5"
+checksum = "2ee1708bef14716a11bae175f579062d4554d95be2c6829f518df847b7b3fdd0"
 
 [[package]]
 name = "wiremock"
