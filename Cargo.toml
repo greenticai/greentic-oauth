@@ -14,7 +14,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.6.0-dev.0"
+version = "1.1.0-dev.0"
 edition = "2024"
 repository = "https://github.com/greenticai/greentic-oauth"
 homepage = "https://github.com/greenticai/greentic-oauth"
@@ -57,40 +57,40 @@ wit-bindgen = "0.57"
 
 [workspace.dependencies.greentic-oauth-core]
 path = "crates/greentic-oauth-core"
-version = ">=0.6.0-dev, <0.7.0-0"
+version = ">=1.1.0-dev, <1.2.0-0"
 
 [workspace.dependencies.greentic-oauth-host]
 path = "crates/greentic-oauth-host"
-version = ">=0.6.0-dev, <0.7.0-0"
+version = ">=1.1.0-dev, <1.2.0-0"
 
 [workspace.dependencies.greentic-oauth-sdk]
 path = "crates/greentic-oauth-sdk"
-version = ">=0.6.0-dev, <0.7.0-0"
+version = ">=1.1.0-dev, <1.2.0-0"
 
 [workspace.dependencies.greentic-telemetry]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 
 [workspace.dependencies.greentic-types]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 default-features = false
 
 [workspace.dependencies.greentic-interfaces-host]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 default-features = false
 
 [workspace.dependencies.greentic-interfaces-wasmtime]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 default-features = false
 
 [workspace.dependencies.greentic-interfaces-guest]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 default-features = false
 
 [workspace.dependencies.greentic-config]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 
 [workspace.dependencies.greentic-config-types]
-version = "0.5"
+version = ">=1.1.0-dev, <1.2.0-0"
 
 [workspace.dependencies.opentelemetry]
 version = "0.31"
