@@ -953,7 +953,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1165,7 +1165,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-axum-example"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1197,9 +1197,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-interfaces"
-version = "1.1.0-dev.27127755811"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c529dbde9ec0a596469ebce690a45d4dce6bf6089925cf23924bcbb01882369c"
+checksum = "7fb262d359eb51d332d060f277ee5dc825f461d0100d43b1450238e44fd44177"
 dependencies = [
  "anyhow",
  "constant_time_eq",
@@ -1240,9 +1240,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-interfaces-wasmtime"
-version = "1.1.0-dev.27127755811"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64c924cff3bad011bb2f3dfb0f2625160163bc45af42a9255ab6970a98e1caf6"
+checksum = "9c39845c36fd5770411ec3e565522c3bd5a63e4eb58d1bd9eb7ffbb51655c57c"
 dependencies = [
  "anyhow",
  "camino",
@@ -1256,7 +1256,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-client"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "reqwest 0.13.3",
  "serde",
@@ -1267,7 +1267,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-core"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1296,7 +1296,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-host"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "async-trait",
  "greentic-interfaces-host",
@@ -1311,7 +1311,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-oauth-sdk"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "async-nats",
@@ -1358,9 +1358,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-types"
-version = "1.1.0-dev.27836473437"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8c40256c6908985ab2bfc60026cab7a3971bbbb5f18d7303f2fffb070f14f39"
+checksum = "2038742af85b1d3eb48cdb53095f8dee84d6ca9f858b6a5bfdaa832938d11585"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1389,9 +1389,9 @@ dependencies = [
 
 [[package]]
 name = "greentic-types-macros"
-version = "1.1.0-dev.27836473437"
+version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c77bca98e27a1872390fe70566920ad0d080e7cc6e8972ac7fa949a27b8aa71e"
+checksum = "7492596e38519a655dec179b9b67a1e9689ef415841a5fc85d4898e0fa556f49"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2078,7 +2078,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2154,7 +2154,7 @@ dependencies = [
 
 [[package]]
 name = "oauth-card"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2163,7 +2163,7 @@ dependencies = [
 
 [[package]]
 name = "oauth-testharness"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
@@ -2217,7 +2217,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-ingress"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2228,7 +2228,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-provider"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "greentic-interfaces-guest",
  "thiserror 2.0.18",
@@ -2237,7 +2237,7 @@ dependencies = [
 
 [[package]]
 name = "oidc-provider-runtime"
-version = "1.1.0-dev.0"
+version = "1.1.0"
 dependencies = [
  "oauth-card",
  "oidc-provider",
@@ -2574,7 +2574,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.14.0",
  "proc-macro2",
  "quote",
  "syn",
@@ -2983,7 +2983,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3041,7 +3041,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -3440,7 +3440,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a766e1110788c36f4fa1c2b71b387a7815aa65f88ce0229841826633d93723e"
 dependencies = [
  "libc",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4514,7 +4514,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
