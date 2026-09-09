@@ -53,7 +53,7 @@ dashmap = "6"
 http = "1"
 toml = "0.9"
 serial_test = "3"
-wit-bindgen = "0.57"
+wit-bindgen = "0.61"
 
 [workspace.dependencies.greentic-oauth-core]
 path = "crates/greentic-oauth-core"
